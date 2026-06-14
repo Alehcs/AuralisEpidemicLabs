@@ -4,9 +4,9 @@ Auralis Epidemic Labs is a socio-cognitive, agent-based simulation workspace
 for studying synthetic epidemic outbreaks, information exposure, risk
 perception, trust, fatigue, mobility, and policy response.
 
-This repository currently contains **Phase 0: the monorepo technical
-foundation**. It does not yet implement a calibrated disease model or complete
-agent-based simulation.
+This repository currently contains **Phase 1: a minimal deterministic ABM
+simulation core**. It implements a synthetic SEIR-style model, not a calibrated
+real-world disease model.
 
 ## Stack
 
@@ -92,7 +92,7 @@ claim. Generated runtime data should be written beneath `outputs/`.
 
 ## Optional Docker Support
 
-Docker is not required for Phase 0. `docker-compose.yml` contains only an
+Docker is not required for Phase 1. `docker-compose.yml` contains only an
 opt-in PostgreSQL service reserved for later persistence work:
 
 ```bash
@@ -101,30 +101,29 @@ docker compose --profile future-db up -d postgres
 
 The backend intentionally has no PostgreSQL driver or database dependency yet.
 
-## Phase 0 Boundaries
+## Phase 1 Capabilities
 
 Implemented now:
 
-- FastAPI app, CORS, health/config/simulation/experiment routes
-- Pure domain and simulation engine boundaries
-- In-memory placeholder simulation lifecycle
-- JSON config loader and representative example configs
-- React dashboard shell with backend health status
-- Minimal backend tests and frontend production build
+- Validated scenario, disease, population, policy, and experiment configs
+- Deterministic seeded population generation and initial outbreak placement
+- Zone routes, probabilistic movement, and aggregate local contacts
+- Susceptible, exposed, asymptomatic, symptomatic, recovered, and isolated states
+- Functional create, step, run, state, and metrics endpoints
+- Per-tick and per-zone metrics plus compact visualization snapshots
+- React controls, zone cards, S/E/I/R metrics, and epidemic history
 
 Deliberately deferred:
 
-- ABM scheduling rules and calibrated transmission behavior
 - Socio-cognitive updates, rumor diffusion, memory, and trust networks
-- Real map rendering, charts, and interactive controls
+- Calibrated epidemiology, demographics, routines, and contact networks
+- Real map geometry and advanced charts or animation
 - Durable run storage, PostgreSQL repositories, authentication, workers
-- Experiment execution, replay, analysis exports, and advanced UI workflows
+- Policy effects, experiment execution, replay, and analysis exports
 
-## Suggested Phase 1 / Prompt 2
+## Suggested Phase 2 / Prompt 3
 
-Define the first executable vertical slice: parse scenario, disease, and
-population configs into domain entities; create a deterministic seeded world;
-advance susceptible/exposed/infectious/recovered states; expose snapshots from
-the real engine; and connect Start/Step controls plus one epidemiological curve
-in the frontend. Keep cognition and policy effects behind their existing engine
-interfaces until that baseline is reproducible and tested.
+Add stable home/work schedules and time-of-day movement, explicit contact event
+sampling, policy activation hooks, snapshot export/replay, and a first batch
+experiment runner. Keep socio-cognitive behavior behind its existing interface
+until epidemiological runs and experiment outputs are reproducible.

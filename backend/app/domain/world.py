@@ -11,6 +11,8 @@ class Zone:
     name: str
     kind: str
     capacity: int
+    contact_rate: float = 1.0
+    movement_weight: float = 1.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,7 +21,7 @@ class Route:
 
     origin_zone_id: str
     destination_zone_id: str
-    travel_cost: float = 1.0
+    travel_weight: float = 1.0
 
 
 @dataclass(slots=True)
@@ -28,3 +30,8 @@ class World:
 
     zones: dict[str, Zone] = field(default_factory=dict)
     routes: list[Route] = field(default_factory=list)
+
+    def destinations_from(self, zone_id: str) -> list[Route]:
+        """Return configured outgoing routes from one zone."""
+
+        return [route for route in self.routes if route.origin_zone_id == zone_id]

@@ -11,7 +11,7 @@ def test_disease_config_validates_probability_range() -> None:
         DiseaseConfig(
             id="invalid",
             name="Invalid disease",
-            transmission_probability=1.2,
+            beta_base=1.2,
             incubation_days=2,
             infectious_days=5,
         )
@@ -21,9 +21,10 @@ def test_disease_config_accepts_minimal_valid_profile() -> None:
     config = DiseaseConfig(
         id="test",
         name="Test profile",
-        transmission_probability=0.1,
+        beta_base=0.1,
         incubation_days=2,
         infectious_days=5,
     )
 
-    assert config.severe_case_probability == 0.05
+    assert config.asymptomatic_probability == 0.4
+    assert config.tick_minutes == 60

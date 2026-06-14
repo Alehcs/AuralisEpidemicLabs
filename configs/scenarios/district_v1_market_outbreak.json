@@ -4,17 +4,34 @@
   "description": "Functional district seeded with an initial market-centered outbreak.",
   "duration_steps": 336,
   "zones": [
-    {"id": "residential_north", "name": "Residential North", "kind": "residential", "capacity": 1800},
-    {"id": "residential_south", "name": "Residential South", "kind": "residential", "capacity": 1600},
-    {"id": "market", "name": "Central Market", "kind": "commerce", "capacity": 700},
-    {"id": "transport", "name": "Transport Hub", "kind": "transport", "capacity": 900},
-    {"id": "work_school", "name": "Work and School Area", "kind": "mixed", "capacity": 1400},
-    {"id": "hospital", "name": "District Hospital", "kind": "healthcare", "capacity": 350},
-    {"id": "plaza", "name": "Public Plaza", "kind": "public", "capacity": 800},
-    {"id": "periphery", "name": "District Periphery", "kind": "periphery", "capacity": 1200}
+    {"id": "residential_north", "name": "Residential North", "kind": "residential", "capacity": 1800, "contact_rate": 6.0, "movement_weight": 0.8},
+    {"id": "residential_south", "name": "Residential South", "kind": "residential", "capacity": 1600, "contact_rate": 6.0, "movement_weight": 0.8},
+    {"id": "market", "name": "Central Market", "kind": "commerce", "capacity": 700, "contact_rate": 18.0, "movement_weight": 1.4},
+    {"id": "transport", "name": "Transport Hub", "kind": "transport", "capacity": 900, "contact_rate": 14.0, "movement_weight": 1.8},
+    {"id": "work_school", "name": "Work and School Area", "kind": "mixed", "capacity": 1400, "contact_rate": 12.0, "movement_weight": 1.2},
+    {"id": "hospital", "name": "District Hospital", "kind": "healthcare", "capacity": 350, "contact_rate": 8.0, "movement_weight": 0.6},
+    {"id": "plaza", "name": "Public Plaza", "kind": "public", "capacity": 800, "contact_rate": 10.0, "movement_weight": 1.0},
+    {"id": "periphery", "name": "District Periphery", "kind": "periphery", "capacity": 1200, "contact_rate": 4.0, "movement_weight": 0.5}
+  ],
+  "routes": [
+    {"origin": "residential_north", "destination": "transport", "travel_weight": 1.0},
+    {"origin": "transport", "destination": "residential_north", "travel_weight": 1.0},
+    {"origin": "residential_south", "destination": "transport", "travel_weight": 1.0},
+    {"origin": "transport", "destination": "residential_south", "travel_weight": 1.0},
+    {"origin": "transport", "destination": "market", "travel_weight": 1.3},
+    {"origin": "market", "destination": "transport", "travel_weight": 1.3},
+    {"origin": "transport", "destination": "work_school", "travel_weight": 1.2},
+    {"origin": "work_school", "destination": "transport", "travel_weight": 1.2},
+    {"origin": "market", "destination": "plaza", "travel_weight": 0.8},
+    {"origin": "plaza", "destination": "market", "travel_weight": 0.8},
+    {"origin": "plaza", "destination": "hospital", "travel_weight": 0.6},
+    {"origin": "hospital", "destination": "plaza", "travel_weight": 0.6},
+    {"origin": "residential_south", "destination": "periphery", "travel_weight": 0.7},
+    {"origin": "periphery", "destination": "residential_south", "travel_weight": 0.7}
   ],
   "initial_outbreak": {
     "zone_id": "market",
-    "exposed_agents": 8
+    "exposed_agents": 8,
+    "infected_agents": 4
   }
 }

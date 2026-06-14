@@ -11,11 +11,30 @@ export class ApiError extends Error {
 }
 
 export async function apiGet<T>(path: string, signal?: AbortSignal): Promise<T> {
+  return apiRequest<T>(path, { method: "GET", signal });
+}
+
+export async function apiPost<T>(
+  path: string,
+  body?: unknown,
+  signal?: AbortSignal,
+): Promise<T> {
+  return apiRequest<T>(path, {
+    method: "POST",
+    body: body === undefined ? undefined : JSON.stringify(body),
+    signal,
+  });
+}
+
+async function apiRequest<T>(path: string, init: RequestInit): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${API_URL}${path}`, {
-      headers: { Accept: "application/json" },
-      signal,
+      ...init,
+      headers: {
+        Accept: "application/json",
+        ...(init.body ? { "Content-Type": "application/json" } : {}),
+      },
     });
   } catch {
     throw new ApiError("Backend unavailable");

@@ -9,5 +9,9 @@ class ConfigNotFoundError(AuralisError):
     """Raised when a named declarative configuration cannot be found."""
 
 
+class ConfigValidationError(AuralisError):
+    """Raised when a declarative configuration is malformed or inconsistent."""
+
+
 class SimulationNotFoundError(AuralisError):
     """Raised when an in-memory simulation identifier is unknown."""

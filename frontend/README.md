@@ -1,6 +1,7 @@
 # Auralis Epidemic Labs Frontend
 
-React, TypeScript, and Vite interface for interactive simulation workflows.
+React, TypeScript, and Vite interface for creating, stepping, and inspecting
+the minimal deterministic simulation.
 
 ```bash
 npm install

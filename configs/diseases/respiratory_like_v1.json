@@ -1,9 +1,10 @@
 {
   "id": "respiratory_like_v1",
   "name": "Respiratory-like V1",
-  "transmission_probability": 0.08,
+  "beta_base": 0.08,
   "incubation_days": 3.5,
   "infectious_days": 6.0,
-  "severe_case_probability": 0.04,
+  "asymptomatic_probability": 0.4,
+  "tick_minutes": 60,
   "notes": "Synthetic profile for simulation research; not calibrated to a real disease."
 }
