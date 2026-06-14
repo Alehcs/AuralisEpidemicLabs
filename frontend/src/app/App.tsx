@@ -28,6 +28,7 @@ const createRequest = {
   population_config: "default_population_v1",
   policy_config: null,
   policy_configs: ["local_alert_policy", "isolation_encouragement_policy"],
+  information_configs: ["false_safety_market"],
   seed: 42,
 };
 
@@ -77,12 +78,12 @@ export function App() {
       setBusy(false);
     }
   };
-  const handleRunExperiment = async () => {
+  const runExperiment = useCallback(async (experimentConfig: string) => {
     setBusy(true);
     setError(null);
     setNotice(null);
     try {
-      const result = await runBatchExperiment();
+      const result = await runBatchExperiment(experimentConfig);
       setExperimentResult(result);
       setNotice(`Batch experiment ${result.experiment_id} completed.`);
     } catch (operationError) {
@@ -90,7 +91,9 @@ export function App() {
     } finally {
       setBusy(false);
     }
-  };
+  }, []);
+  const handleRunExperiment = () => runExperiment("global_vs_local_alert");
+  const handleRunRumorExperiment = () => runExperiment("official_alert_vs_rumors");
 
   return (
     <div className="app-shell">
@@ -113,6 +116,7 @@ export function App() {
             onReset={handleReset}
             onExport={handleExport}
             onRunExperiment={handleRunExperiment}
+            onRunRumorExperiment={handleRunRumorExperiment}
           />
           <MetricsPanel snapshot={snapshot} />
         </div>
@@ -123,7 +127,7 @@ export function App() {
           <ExperimentResults result={experimentResult} />
         </div>
       </main>
-      <footer>Phase 3 · Real policy effects, official alerts, isolation, and comparative experiments</footer>
+      <footer>Phase 4 · Adaptive cognition, trust, fatigue, memory, and rumor vs official information</footer>
     </div>
   );
 }

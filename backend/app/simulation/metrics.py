@@ -34,6 +34,9 @@ class MetricsEngine:
             + counts["infected_symptomatic"]
             + counts["isolated"]
         )
+        agent_count = len(agents)
+        mean_perceived = fmean(agent.perceived_risk for agent in agents)
+        mean_real = fmean(agent.real_risk for agent in agents)
         return MetricsSnapshot(
             tick=tick,
             susceptible_count=counts["susceptible"],
@@ -48,11 +51,33 @@ class MetricsEngine:
             active_policy_count=active_policy_count,
             agents_under_local_alert=agents_under_local_alert,
             agents_under_global_alert=agents_under_global_alert,
-            mean_perceived_risk=round(fmean(agent.perceived_risk for agent in agents), 6),
+            mean_perceived_risk=round(mean_perceived, 6),
             mean_alert_exposure=round(fmean(agent.alert_exposure for agent in agents), 6),
-            mean_contacts=round((contact_count * 2) / len(agents), 6),
+            mean_contacts=round((contact_count * 2) / agent_count, 6),
             movement_reduction_estimate=round(movement_reduction_estimate, 6),
             contact_reduction_estimate=round(contact_reduction_estimate, 6),
+            mean_real_risk=round(mean_real, 6),
+            mean_perception_gap=round(mean_perceived - mean_real, 6),
+            mean_trust_authority=round(fmean(agent.trust_authority for agent in agents), 6),
+            mean_trust_peers=round(fmean(agent.trust_peers for agent in agents), 6),
+            mean_fatigue=round(fmean(agent.fatigue for agent in agents), 6),
+            mean_fear=round(fmean(agent.fear for agent in agents), 6),
+            mean_curiosity=round(fmean(agent.curiosity for agent in agents), 6),
+            mean_compliance=round(fmean(agent.adaptive_compliance for agent in agents), 6),
+            mean_rumor_belief=round(fmean(agent.rumor_belief for agent in agents), 6),
+            mean_rumor_exposure=round(fmean(agent.rumor_exposure for agent in agents), 6),
+            rumor_exposure_count=sum(
+                1 for agent in agents if agent.rumor_exposure > 0.01
+            ),
+            official_alert_exposure_count=sum(
+                1 for agent in agents if agent.official_alert_exposure > 0.01
+            ),
+            false_safety_exposure_count=sum(
+                1 for agent in agents if agent.safety_rumor_exposure > 0.01
+            ),
+            anti_authority_exposure_count=sum(
+                1 for agent in agents if agent.anti_authority_exposure > 0.01
+            ),
             policy_effect_summary=policy_effect_summary or {},
         )
 
@@ -98,6 +123,16 @@ class MetricsEngine:
                     ),
                     mean_alert_exposure=(
                         round(fmean(agent.alert_exposure for agent in local_agents), 6)
+                        if local_agents
+                        else 0.0
+                    ),
+                    mean_rumor_exposure=(
+                        round(fmean(agent.rumor_exposure for agent in local_agents), 6)
+                        if local_agents
+                        else 0.0
+                    ),
+                    mean_fatigue=(
+                        round(fmean(agent.fatigue for agent in local_agents), 6)
                         if local_agents
                         else 0.0
                     ),

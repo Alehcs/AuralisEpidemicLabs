@@ -1,0 +1,12 @@
+{
+  "id": "panic_rumor_district",
+  "event_type": "panic_rumor",
+  "source": "viral_post",
+  "start_tick": 48,
+  "end_tick": 168,
+  "target_zone_id": null,
+  "intensity": 0.65,
+  "reach": 0.6,
+  "accuracy": 0.1,
+  "decay_rate": 0.08
+}

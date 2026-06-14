@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from app.domain.information import InformationType
 from app.domain.policy import PolicyType
 
 
@@ -100,6 +101,36 @@ class RoutineDistribution(BaseModel):
     proportion: float = Field(gt=0, le=1)
 
 
+class CognitiveDistributionConfig(BaseModel):
+    """Initial population means for Phase 4 socio-cognitive attributes.
+
+    Every field is optional with an interpretable default so existing population
+    configs keep working unchanged. ``spread`` is the deterministic +/- jitter
+    band applied per agent from a dedicated seeded stream.
+    """
+
+    trust_authority_mean: float = Field(default=0.55, ge=0, le=1)
+    trust_peers_mean: float = Field(default=0.5, ge=0, le=1)
+    fatigue_mean: float = Field(default=0.0, ge=0, le=1)
+    skepticism_mean: float = Field(default=0.3, ge=0, le=1)
+    curiosity_mean: float = Field(default=0.3, ge=0, le=1)
+    rumor_belief_mean: float = Field(default=0.3, ge=0, le=1)
+    compliance_mean: float = Field(default=0.5, ge=0, le=1)
+    spread: float = Field(default=0.12, ge=0, le=0.5)
+
+
+class BehavioralProfileConfig(BaseModel):
+    """Additive per-profile biases layered on the population cognitive means."""
+
+    trust_authority: float = Field(default=0.0, ge=-1, le=1)
+    trust_peers: float = Field(default=0.0, ge=-1, le=1)
+    fatigue: float = Field(default=0.0, ge=-1, le=1)
+    skepticism: float = Field(default=0.0, ge=-1, le=1)
+    curiosity: float = Field(default=0.0, ge=-1, le=1)
+    rumor_belief: float = Field(default=0.0, ge=-1, le=1)
+    compliance: float = Field(default=0.0, ge=-1, le=1)
+
+
 class AgentPopulationConfig(BaseModel):
     """Population size and initial behavioral profile distribution."""
 
@@ -108,6 +139,10 @@ class AgentPopulationConfig(BaseModel):
     population_size: int = Field(gt=0)
     profiles: list[AgentProfileDistribution] = Field(min_length=1)
     routines: list[RoutineDistribution] = Field(min_length=1)
+    cognition: CognitiveDistributionConfig = Field(
+        default_factory=CognitiveDistributionConfig
+    )
+    behavioral_profiles: dict[str, BehavioralProfileConfig] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_profile_distribution(self) -> "AgentPopulationConfig":
@@ -170,12 +205,39 @@ class PolicyConfig(BaseModel):
         return float(self.effects.get(legacy_names[name], default))
 
 
+class InformationEventConfig(BaseModel):
+    """A declarative official message or rumor with a fixed schedule."""
+
+    id: str = Field(min_length=1)
+    event_type: InformationType
+    source: str = Field(default="unknown", min_length=1)
+    start_tick: int = Field(default=0, ge=0)
+    end_tick: int | None = Field(default=None, ge=0)
+    target_zone_id: str | None = None
+    intensity: float = Field(default=0.5, ge=0, le=1)
+    reach: float = Field(default=0.5, ge=0, le=1)
+    accuracy: float = Field(default=0.5, ge=0, le=1)
+    decay_rate: float = Field(default=0.05, ge=0, le=1)
+
+    @field_validator("event_type", mode="before")
+    @classmethod
+    def normalize_event_type(cls, value: Any) -> Any:
+        return value.lower() if isinstance(value, str) else value
+
+    @model_validator(mode="after")
+    def validate_schedule(self) -> "InformationEventConfig":
+        if self.end_tick is not None and self.end_tick < self.start_tick:
+            raise ValueError("information event end_tick must be >= start_tick")
+        return self
+
+
 class ExperimentVariantConfig(BaseModel):
     """One named treatment arm in a batch experiment."""
 
     id: str = Field(min_length=1)
     policy_config: str | None = None
     policy_configs: list[str] = Field(default_factory=list)
+    information_configs: list[str] = Field(default_factory=list)
     overrides: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")

@@ -1,0 +1,38 @@
+{
+  "id": "official_alert_vs_rumors",
+  "name": "Official Alerts vs Rumors and Distrust",
+  "scenario_config": "district_v1_market_outbreak",
+  "disease_config": "respiratory_like_v1",
+  "population_config": "default_population_v1",
+  "repetitions": 2,
+  "seeds": [42, 84],
+  "ticks": 168,
+  "variants": [
+    {
+      "id": "baseline",
+      "policy_configs": []
+    },
+    {
+      "id": "official_local_alert",
+      "policy_config": "local_alert_policy"
+    },
+    {
+      "id": "official_global_alert",
+      "policy_config": "global_alert_policy"
+    },
+    {
+      "id": "false_safety_rumor",
+      "information_configs": ["false_safety_market"]
+    },
+    {
+      "id": "official_alert_plus_false_safety",
+      "policy_config": "global_alert_policy",
+      "information_configs": ["false_safety_market"]
+    },
+    {
+      "id": "anti_authority_rumor_plus_alert",
+      "policy_config": "global_alert_policy",
+      "information_configs": ["anti_authority_rumor"]
+    }
+  ]
+}

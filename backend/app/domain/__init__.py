@@ -3,7 +3,7 @@
 from app.domain.agent import Agent, EpidemiologicalState, RoutineType
 from app.domain.contacts import ContactRecord
 from app.domain.disease import DiseaseProfile
-from app.domain.information import InformationEvent
+from app.domain.information import InformationEvent, InformationType
 from app.domain.metrics import MetricsSnapshot, ZoneMetricsSnapshot
 from app.domain.policy import Policy
 from app.domain.simulation import SimulationSnapshot, SimulationState
@@ -16,6 +16,7 @@ __all__ = [
     "DiseaseProfile",
     "EpidemiologicalState",
     "InformationEvent",
+    "InformationType",
     "MetricsSnapshot",
     "Policy",
     "Route",

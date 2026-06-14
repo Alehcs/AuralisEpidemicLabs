@@ -34,8 +34,10 @@ export function exportSimulation(simulationId: string): Promise<ExportRunRespons
   return apiPost<ExportRunResponse>(`/simulations/${simulationId}/export`);
 }
 
-export function runBatchExperiment(): Promise<ExperimentResultResponse> {
+export function runBatchExperiment(
+  experimentConfig = "global_vs_local_alert",
+): Promise<ExperimentResultResponse> {
   return apiPost<ExperimentResultResponse>("/experiments/run", {
-    experiment_config: "global_vs_local_alert",
+    experiment_config: experimentConfig,
   });
 }

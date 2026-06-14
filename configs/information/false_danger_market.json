@@ -1,0 +1,12 @@
+{
+  "id": "false_danger_market",
+  "event_type": "false_danger_rumor",
+  "source": "social_chatter",
+  "start_tick": 24,
+  "end_tick": 240,
+  "target_zone_id": "market",
+  "intensity": 0.6,
+  "reach": 0.75,
+  "accuracy": 0.15,
+  "decay_rate": 0.05
+}

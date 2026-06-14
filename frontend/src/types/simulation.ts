@@ -17,6 +17,20 @@ export interface MetricsSnapshot {
   mean_contacts: number;
   movement_reduction_estimate: number;
   contact_reduction_estimate: number;
+  mean_real_risk: number;
+  mean_perception_gap: number;
+  mean_trust_authority: number;
+  mean_trust_peers: number;
+  mean_fatigue: number;
+  mean_fear: number;
+  mean_curiosity: number;
+  mean_compliance: number;
+  mean_rumor_belief: number;
+  mean_rumor_exposure: number;
+  rumor_exposure_count: number;
+  official_alert_exposure_count: number;
+  false_safety_exposure_count: number;
+  anti_authority_exposure_count: number;
   policy_effect_summary: Record<string, unknown>;
 }
 
@@ -30,6 +44,8 @@ export interface ZoneSummary {
   risk_level_simple: number;
   mean_perceived_risk: number;
   mean_alert_exposure: number;
+  mean_rumor_exposure: number;
+  mean_fatigue: number;
   active_policies: string[];
 }
 
@@ -62,18 +78,25 @@ export interface SimulationSnapshot {
   contact_summary: ContactRecord[];
   active_policies: string[];
   metrics: MetricsSnapshot;
-  sample_agents_for_visualization: Array<{
-    id: string;
-    zone_id: string;
-    state: string;
-    profile: string;
-    routine_type: string;
-    home_zone_id: string;
-    intended_destination: string | null;
-    perceived_risk: number;
-    alert_exposure: number;
-    compliance_tendency: number;
-  }>;
+  sample_agents_for_visualization: SampleAgent[];
+}
+
+export interface SampleAgent {
+  id: string;
+  zone_id: string;
+  state: string;
+  profile: string;
+  routine_type: string;
+  home_zone_id: string;
+  intended_destination: string | null;
+  perceived_risk: number;
+  real_risk: number;
+  alert_exposure: number;
+  rumor_exposure: number;
+  compliance_tendency: number;
+  adaptive_compliance: number;
+  trust_authority: number;
+  fatigue: number;
 }
 
 export interface SimulationStateResponse {
@@ -95,6 +118,7 @@ export interface SimulationCreateRequest {
   population_config: string;
   policy_config: string | null;
   policy_configs: string[];
+  information_configs: string[];
   seed: number;
 }
 
@@ -117,6 +141,12 @@ export interface ExperimentRunMetric {
   mean_contacts: number;
   mean_movement_reduction: number;
   mean_contact_reduction: number;
+  mean_real_risk: number;
+  mean_perception_gap: number;
+  mean_trust_authority: number;
+  mean_fatigue: number;
+  mean_compliance: number;
+  mean_rumor_exposure: number;
 }
 
 export interface VariantResult {

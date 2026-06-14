@@ -6,6 +6,7 @@ from typing import Any
 from app.domain.agent import Agent
 from app.domain.contacts import ContactRecord
 from app.domain.disease import DiseaseProfile
+from app.domain.information import InformationEvent
 from app.domain.metrics import MetricsSnapshot, ZoneMetricsSnapshot
 from app.domain.policy import Policy
 from app.domain.time import SimulationTime
@@ -26,16 +27,20 @@ class SimulationState:
     config_summary: dict[str, Any] = field(default_factory=dict)
     policy: Policy | None = None
     policies: list[Policy] = field(default_factory=list)
+    information_events: list[InformationEvent] = field(default_factory=list)
     new_infections: int = 0
     metrics_history: list[MetricsSnapshot] = field(default_factory=list)
     contact_history: list[ContactRecord] = field(default_factory=list)
     snapshots_history: list[dict[str, Any]] = field(default_factory=list)
     active_policy_ids: list[str] = field(default_factory=list)
+    active_information_ids: list[str] = field(default_factory=list)
     policy_effect_summary: dict[str, Any] = field(default_factory=dict)
+    information_effect_summary: dict[str, Any] = field(default_factory=dict)
     movement_reduction_estimate: float = 0.0
     contact_reduction_estimate: float = 0.0
     agents_under_local_alert: int = 0
     agents_under_global_alert: int = 0
+    agents_under_rumor: int = 0
 
 
 @dataclass(frozen=True, slots=True)

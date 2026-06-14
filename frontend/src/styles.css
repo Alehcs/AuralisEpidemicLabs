@@ -185,6 +185,7 @@ button:disabled, select:disabled { cursor: not-allowed; opacity: 0.72; }
 .button-danger { color: #e6b2aa; border-color: #674039; background: rgba(103, 64, 57, 0.16); }
 
 .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.metric-group-label { margin: 16px 0 8px; color: var(--accent); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .metric { display: grid; gap: 8px; padding: 13px; border: 1px solid #243a35; border-radius: 9px; background: #0d1917; }
 .metric span { color: var(--muted); font-size: 0.7rem; }
 .metric strong { font-size: 1.15rem; font-variant-numeric: tabular-nums; }

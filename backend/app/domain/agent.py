@@ -52,6 +52,7 @@ class Agent:
     recovered_at_tick: int | None = None
     infectiousness: float = 0.0
     perceived_risk: float = 0.0
+    real_risk: float = 0.0
     alert_exposure: float = 0.0
     official_alert_exposure: float = 0.0
     local_alert_exposure: float = 0.0
@@ -62,9 +63,22 @@ class Agent:
     policy_memory: dict[str, float] = field(default_factory=dict)
     pre_isolation_state: EpidemiologicalState | None = None
     isolation_started_tick: int | None = None
-    trust: float = 0.5
+    # --- Phase 4 socio-cognitive state (all bounded to [0.0, 1.0]) ---
+    trust_authority: float = 0.5
+    trust_peers: float = 0.5
     fatigue: float = 0.0
-    memory: list[str] = field(default_factory=list)
+    fear: float = 0.0
+    curiosity: float = 0.3
+    rumor_belief: float = 0.3
+    skepticism: float = 0.3
+    memory_risk: float = 0.0
+    memory_alert_accuracy: float = 0.5
+    memory_recent_infections_nearby: float = 0.0
+    adaptive_compliance: float = 0.5
+    rumor_exposure: float = 0.0
+    safety_rumor_exposure: float = 0.0
+    danger_rumor_exposure: float = 0.0
+    anti_authority_exposure: float = 0.0
 
     @property
     def is_infectious(self) -> bool:

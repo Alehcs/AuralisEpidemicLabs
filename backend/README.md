@@ -20,6 +20,9 @@ Simulation lifecycle endpoints:
 - `POST /simulations/{simulation_id}/run`
 - `GET /simulations/{simulation_id}/state`
 - `GET /simulations/{simulation_id}/metrics`
+- `GET /simulations/{simulation_id}/policies`
+- `GET /simulations/{simulation_id}/cognition`
+- `GET /simulations/{simulation_id}/information`
 - `POST /simulations/{simulation_id}/export`
 - `GET /runs`
 - `GET /runs/{run_id}/metadata`

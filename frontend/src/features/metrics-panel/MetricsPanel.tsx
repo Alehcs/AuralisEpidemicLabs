@@ -30,10 +30,49 @@ export function MetricsPanel({ snapshot }: MetricsPanelProps) {
     ["Contact reduction", metrics ? `${(metrics.contact_reduction_estimate * 100).toFixed(1)}%` : "--"],
   ];
 
+  const pct = (value: number | undefined) =>
+    value === undefined ? "--" : `${(value * 100).toFixed(1)}%`;
+  const cognitive: Array<[string, string]> = [
+    ["Perceived risk", pct(metrics?.mean_perceived_risk)],
+    ["Real risk", pct(metrics?.mean_real_risk)],
+    ["Perception gap", metrics ? `${(metrics.mean_perception_gap * 100).toFixed(1)} pp` : "--"],
+    ["Trust authority", pct(metrics?.mean_trust_authority)],
+    ["Trust peers", pct(metrics?.mean_trust_peers)],
+    ["Fatigue", pct(metrics?.mean_fatigue)],
+    ["Compliance", pct(metrics?.mean_compliance)],
+    ["Fear", pct(metrics?.mean_fear)],
+    ["Curiosity", pct(metrics?.mean_curiosity)],
+    ["Rumor exposure", pct(metrics?.mean_rumor_exposure)],
+  ];
+  const information: Array<[string, string]> = [
+    ["Official alert exposed", metrics ? formatStep(metrics.official_alert_exposure_count) : "--"],
+    ["Rumor exposed", metrics ? formatStep(metrics.rumor_exposure_count) : "--"],
+    ["False-safety exposed", metrics ? formatStep(metrics.false_safety_exposure_count) : "--"],
+    ["Anti-authority exposed", metrics ? formatStep(metrics.anti_authority_exposure_count) : "--"],
+  ];
+
   return (
     <Panel title="Metrics" eyebrow="Live snapshot">
       <div className="metric-grid">
         {values.map(([label, value]) => (
+          <div className="metric" key={label}>
+            <span>{label}</span>
+            <strong>{value}</strong>
+          </div>
+        ))}
+      </div>
+      <p className="metric-group-label">Socio-cognitive state</p>
+      <div className="metric-grid">
+        {cognitive.map(([label, value]) => (
+          <div className="metric" key={label}>
+            <span>{label}</span>
+            <strong>{value}</strong>
+          </div>
+        ))}
+      </div>
+      <p className="metric-group-label">Information exposure</p>
+      <div className="metric-grid">
+        {information.map(([label, value]) => (
           <div className="metric" key={label}>
             <span>{label}</span>
             <strong>{value}</strong>

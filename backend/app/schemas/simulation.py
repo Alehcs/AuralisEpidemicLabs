@@ -13,6 +13,7 @@ class SimulationCreateRequest(BaseModel):
     population_config: str = Field(default="default_population_v1", min_length=1)
     policy_config: str | None = "local_alert_policy"
     policy_configs: list[str] = Field(default_factory=list)
+    information_configs: list[str] = Field(default_factory=list)
     seed: int = Field(default=42, ge=0)
 
 
@@ -41,6 +42,20 @@ class MetricsSnapshotResponse(BaseModel):
     mean_contacts: float = Field(ge=0)
     movement_reduction_estimate: float = Field(ge=0, le=1)
     contact_reduction_estimate: float = Field(ge=0, le=1)
+    mean_real_risk: float = Field(default=0.0, ge=0, le=1)
+    mean_perception_gap: float = Field(default=0.0, ge=-1, le=1)
+    mean_trust_authority: float = Field(default=0.0, ge=0, le=1)
+    mean_trust_peers: float = Field(default=0.0, ge=0, le=1)
+    mean_fatigue: float = Field(default=0.0, ge=0, le=1)
+    mean_fear: float = Field(default=0.0, ge=0, le=1)
+    mean_curiosity: float = Field(default=0.0, ge=0, le=1)
+    mean_compliance: float = Field(default=0.0, ge=0, le=1)
+    mean_rumor_belief: float = Field(default=0.0, ge=0, le=1)
+    mean_rumor_exposure: float = Field(default=0.0, ge=0, le=1)
+    rumor_exposure_count: int = Field(default=0, ge=0)
+    official_alert_exposure_count: int = Field(default=0, ge=0)
+    false_safety_exposure_count: int = Field(default=0, ge=0)
+    anti_authority_exposure_count: int = Field(default=0, ge=0)
     policy_effect_summary: dict[str, Any]
 
 
@@ -54,6 +69,8 @@ class ZoneSummaryResponse(BaseModel):
     risk_level_simple: float = Field(ge=0, le=1)
     mean_perceived_risk: float = Field(ge=0, le=1)
     mean_alert_exposure: float = Field(ge=0, le=1)
+    mean_rumor_exposure: float = Field(default=0.0, ge=0, le=1)
+    mean_fatigue: float = Field(default=0.0, ge=0, le=1)
     active_policies: list[str]
 
 
@@ -66,8 +83,13 @@ class SampleAgentResponse(BaseModel):
     home_zone_id: str
     intended_destination: str | None
     perceived_risk: float = Field(ge=0, le=1)
+    real_risk: float = Field(default=0.0, ge=0, le=1)
     alert_exposure: float = Field(ge=0, le=1)
+    rumor_exposure: float = Field(default=0.0, ge=0, le=1)
     compliance_tendency: float = Field(ge=0, le=1)
+    adaptive_compliance: float = Field(default=0.0, ge=0, le=1)
+    trust_authority: float = Field(default=0.0, ge=0, le=1)
+    fatigue: float = Field(default=0.0, ge=0, le=1)
 
 
 class SimulationTimeResponse(BaseModel):
@@ -136,6 +158,55 @@ class SimulationPoliciesResponse(BaseModel):
     tick: int
     configured: list[PolicyStatusResponse]
     active_policy_ids: list[str]
+    effect_summary: dict[str, Any]
+
+
+class CognitionMetricsResponse(BaseModel):
+    """Aggregate socio-cognitive measurements for the current tick."""
+
+    mean_perceived_risk: float
+    mean_real_risk: float
+    mean_perception_gap: float
+    mean_trust_authority: float
+    mean_trust_peers: float
+    mean_fatigue: float
+    mean_fear: float
+    mean_curiosity: float
+    mean_compliance: float
+    mean_rumor_belief: float
+
+
+class SimulationCognitionResponse(BaseModel):
+    """Cognition summary plus a bounded agent sample for inspection."""
+
+    simulation_id: str
+    tick: int
+    metrics: CognitionMetricsResponse
+    sample_agents: list[SampleAgentResponse]
+
+
+class InformationEventStatus(BaseModel):
+    id: str
+    event_type: str
+    source: str
+    scope: str
+    target_zone_id: str | None
+    active: bool
+    start_tick: int
+    end_tick: int | None
+    intensity: float
+    reach: float
+    accuracy: float
+
+
+class SimulationInformationResponse(BaseModel):
+    """Configured information events and current exposure reach."""
+
+    simulation_id: str
+    tick: int
+    events: list[InformationEventStatus]
+    active_information_ids: list[str]
+    exposure: dict[str, int]
     effect_summary: dict[str, Any]
 
 

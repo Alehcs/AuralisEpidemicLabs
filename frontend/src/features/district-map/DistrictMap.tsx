@@ -37,6 +37,8 @@ export function DistrictMap({ zones, contacts }: DistrictMapProps) {
         risk_level_simple: 0,
         mean_perceived_risk: 0,
         mean_alert_exposure: 0,
+        mean_rumor_exposure: 0,
+        mean_fatigue: 0,
         active_policies: [],
       }));
 
@@ -70,6 +72,8 @@ export function DistrictMap({ zones, contacts }: DistrictMapProps) {
               <span>New cases <b>{contactsByZone.get(zone.zone_id)?.new_infections ?? 0}</b></span>
               <span>Perceived risk <b>{(zone.mean_perceived_risk * 100).toFixed(1)}%</b></span>
               <span>Alert exposure <b>{(zone.mean_alert_exposure * 100).toFixed(1)}%</b></span>
+              <span>Rumor exposure <b>{(zone.mean_rumor_exposure * 100).toFixed(1)}%</b></span>
+              <span>Fatigue <b>{(zone.mean_fatigue * 100).toFixed(1)}%</b></span>
             </div>
           </article>
         ))}

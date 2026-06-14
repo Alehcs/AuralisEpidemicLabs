@@ -11,6 +11,7 @@ interface SimulationControlsProps {
   onReset: () => void;
   onExport: () => void;
   onRunExperiment: () => void;
+  onRunRumorExperiment: () => void;
 }
 
 export function SimulationControls({
@@ -22,6 +23,7 @@ export function SimulationControls({
   onReset,
   onExport,
   onRunExperiment,
+  onRunRumorExperiment,
 }: SimulationControlsProps) {
   const [runTicks, setRunTicks] = useState(24);
 
@@ -74,10 +76,15 @@ export function SimulationControls({
           <button type="button" className="button-secondary" disabled={busy} onClick={onRunExperiment}>
             Run batch experiment
           </button>
+          <button type="button" className="button-secondary" disabled={busy} onClick={onRunRumorExperiment}>
+            Run rumor experiment
+          </button>
         </div>
       </div>
       <p className="panel-note">
-        {busy ? "Running deterministic operation…" : "Seed 42 · local alert + symptomatic isolation · local exports"}
+        {busy
+          ? "Running deterministic operation…"
+          : "Seed 42 · local alert + symptomatic isolation · cognition, trust, fatigue & rumors"}
       </p>
     </Panel>
   );

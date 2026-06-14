@@ -76,7 +76,7 @@ class MobilityEngine:
                 multiplier = min(multiplier, 0.05)
             if not optional:
                 multiplier = 1 - (1 - multiplier) * 0.35
-            compliance_effect = 1 - (1 - multiplier) * agent.compliance_tendency
+            compliance_effect = 1 - (1 - multiplier) * agent.adaptive_compliance
             if rng.random() > compliance_effect:
                 policy_blocked += 1
                 continue
@@ -104,7 +104,7 @@ class MobilityEngine:
         }:
             return routine_destination, False
         if label == TimeOfDayLabel.LUNCH:
-            if rng.random() < 0.35 * agent.movement_tendency:
+            if rng.random() < 0.35 * agent.movement_tendency * self._social_drive(agent):
                 return self._available_social_destination(world, rng), True
             return routine_destination, False
         if label == TimeOfDayLabel.NIGHT_SOCIAL:
@@ -112,10 +112,25 @@ class MobilityEngine:
                 RoutineType.ELDERLY,
                 RoutineType.REMOTE,
             } else 0.18
-            if rng.random() < social_probability * agent.movement_tendency:
+            drive = social_probability * agent.movement_tendency * self._social_drive(agent)
+            if rng.random() < drive:
                 return self._available_social_destination(world, rng), True
             return agent.home_zone_id, False
         return agent.home_zone_id, False
+
+    @staticmethod
+    def _social_drive(agent: Agent) -> float:
+        """Cognitive multiplier on optional/social trips.
+
+        Perceived risk suppresses voluntary outings, while accumulated fatigue and
+        curiosity push agents back out after prolonged restrictions. Bounded so it
+        only modulates (never inverts) the baseline schedule probabilities.
+        """
+
+        drive = (1.0 - 0.6 * agent.perceived_risk) * (
+            1.0 + 0.5 * agent.fatigue * (0.5 + agent.curiosity)
+        )
+        return max(0.0, min(1.6, drive))
 
     def _available_social_destination(self, world: World, rng: random.Random) -> str:
         candidates = [zone_id for zone_id in self.SOCIAL_DESTINATIONS if zone_id in world.zones]

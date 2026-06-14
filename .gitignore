@@ -32,3 +32,5 @@ outputs/reports/*
 # Local database volumes and logs
 *.log
 .postgres-data/
+
+.claude/launch.json

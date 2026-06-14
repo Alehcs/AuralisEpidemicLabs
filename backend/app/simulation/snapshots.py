@@ -44,8 +44,13 @@ class SnapshotBuilder:
                 "home_zone_id": agent.home_zone_id,
                 "intended_destination": agent.current_intended_destination,
                 "perceived_risk": agent.perceived_risk,
+                "real_risk": agent.real_risk,
                 "alert_exposure": agent.alert_exposure,
+                "rumor_exposure": agent.rumor_exposure,
                 "compliance_tendency": agent.compliance_tendency,
+                "adaptive_compliance": agent.adaptive_compliance,
+                "trust_authority": agent.trust_authority,
+                "fatigue": agent.fatigue,
             }
             for agent in state.agents[:120]
         ]

@@ -9,7 +9,7 @@ export function AppHeader() {
         <h1>Auralis Epidemic Labs</h1>
         <p className="subtitle">Socio-cognitive epidemic simulation lab</p>
       </div>
-      <div className="phase-badge">Phase 3</div>
+      <div className="phase-badge">Phase 4</div>
     </header>
   );
 }

@@ -5,7 +5,34 @@ import random
 from app.domain.agent import Agent, EpidemiologicalState, RoutineType
 from app.domain.disease import DiseaseProfile
 from app.domain.world import World, Zone
-from app.schemas.configs import AgentPopulationConfig, InitialOutbreakConfig
+from app.schemas.configs import (
+    AgentPopulationConfig,
+    BehavioralProfileConfig,
+    CognitiveDistributionConfig,
+    InitialOutbreakConfig,
+)
+
+# Built-in additive cognitive biases keyed by recognizable profile names. They
+# cover both the canonical Phase 4 archetypes (obedient, skeptical, curious,
+# fatigued, altruistic, antisocial) and the existing population profile names so
+# behavior is interpretable without forcing every config to redeclare biases.
+# Population configs may override any of these via ``behavioral_profiles``.
+DEFAULT_PROFILE_BIAS: dict[str, dict[str, float]] = {
+    "obedient": {"trust_authority": 0.25, "compliance": 0.25, "skepticism": -0.15},
+    "skeptical": {"trust_authority": -0.25, "skepticism": 0.3, "rumor_belief": 0.1},
+    "skeptics": {"trust_authority": -0.25, "skepticism": 0.3, "rumor_belief": 0.1},
+    "curious": {"curiosity": 0.35, "rumor_belief": 0.15, "trust_peers": 0.1},
+    "fatigued": {"fatigue": 0.3, "compliance": -0.1},
+    "evaders": {"trust_authority": -0.15, "compliance": -0.25, "skepticism": 0.2},
+    "altruistic": {"compliance": 0.2, "trust_authority": 0.1, "trust_peers": 0.15},
+    "altruists": {"compliance": 0.2, "trust_authority": 0.1, "trust_peers": 0.15},
+    "antisocial": {"trust_peers": -0.25, "compliance": -0.2, "rumor_belief": 0.15},
+    "griefers": {"trust_authority": -0.2, "compliance": -0.3, "rumor_belief": 0.25},
+}
+
+# Independent offset so cognitive draws never perturb the deterministic Phase 1-3
+# population/outbreak random stream; same seed still reproduces identical state.
+_COGNITION_SEED_OFFSET = 0x5F3759DF
 
 
 class PopulationGenerator:
@@ -69,7 +96,72 @@ class PopulationGenerator:
             agent.exposed_at_tick = 0
             agent.infected_at_tick = 0
             agent.infectiousness = 0.65 if asymptomatic else 1.0
+
+        self._initialize_cognition(agents, config, seed)
         return agents
+
+    def _initialize_cognition(
+        self,
+        agents: list[Agent],
+        config: AgentPopulationConfig,
+        seed: int,
+    ) -> None:
+        """Assign deterministic, bounded socio-cognitive state per agent.
+
+        Uses a dedicated seeded stream so the existing population/outbreak draws
+        remain byte-identical to earlier phases.
+        """
+
+        cog_rng = random.Random(seed ^ _COGNITION_SEED_OFFSET)
+        means = config.cognition
+        for agent in agents:
+            bias = self._profile_bias(config, agent.profile)
+            agent.trust_authority = self._draw(
+                cog_rng, means.trust_authority_mean, bias.trust_authority, means.spread
+            )
+            agent.trust_peers = self._draw(
+                cog_rng, means.trust_peers_mean, bias.trust_peers, means.spread
+            )
+            agent.fatigue = self._draw(
+                cog_rng, means.fatigue_mean, bias.fatigue, means.spread
+            )
+            agent.skepticism = self._draw(
+                cog_rng, means.skepticism_mean, bias.skepticism, means.spread
+            )
+            agent.curiosity = self._draw(
+                cog_rng, means.curiosity_mean, bias.curiosity, means.spread
+            )
+            agent.rumor_belief = self._draw(
+                cog_rng, means.rumor_belief_mean, bias.rumor_belief, means.spread
+            )
+            compliance = self._draw(
+                cog_rng, means.compliance_mean, bias.compliance, means.spread
+            )
+            agent.compliance_tendency = compliance
+            agent.isolation_compliance = compliance
+            agent.adaptive_compliance = compliance
+            agent.memory_alert_accuracy = 0.5
+
+    @staticmethod
+    def _profile_bias(
+        config: AgentPopulationConfig,
+        profile: str,
+    ) -> BehavioralProfileConfig:
+        override = config.behavioral_profiles.get(profile)
+        if override is not None:
+            return override
+        defaults = DEFAULT_PROFILE_BIAS.get(profile, {})
+        return BehavioralProfileConfig(**defaults)
+
+    @staticmethod
+    def _draw(
+        rng: random.Random,
+        mean: float,
+        bias: float,
+        spread: float,
+    ) -> float:
+        value = mean + bias + rng.uniform(-spread, spread)
+        return round(min(1.0, max(0.0, value)), 6)
 
     @staticmethod
     def _zones_by_kind(zones: list[Zone], kinds: set[str]) -> list[Zone]:

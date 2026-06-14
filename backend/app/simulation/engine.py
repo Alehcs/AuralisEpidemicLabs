@@ -4,12 +4,15 @@ import random
 from dataclasses import dataclass, field
 from typing import Any
 
+from app.domain.agent import EpidemiologicalState
 from app.domain.disease import DiseaseProfile
+from app.domain.information import InformationEvent
 from app.domain.policy import Policy
 from app.domain.simulation import SimulationSnapshot, SimulationState
 from app.domain.time import SimulationTime
 from app.domain.world import World
 from app.schemas.configs import AgentPopulationConfig, InitialOutbreakConfig
+from app.simulation.cognition import CognitionEngine
 from app.simulation.contacts import ContactEngine
 from app.simulation.information import InformationEngine
 from app.simulation.metrics import MetricsEngine
@@ -30,6 +33,7 @@ class SimulationEngine:
     contact_engine: ContactEngine = field(default_factory=ContactEngine)
     transmission_engine: TransmissionEngine = field(default_factory=TransmissionEngine)
     information_engine: InformationEngine = field(default_factory=InformationEngine)
+    cognition_engine: CognitionEngine = field(default_factory=CognitionEngine)
     policy_engine: PolicyHookEngine = field(default_factory=PolicyHookEngine)
     metrics_engine: MetricsEngine = field(default_factory=MetricsEngine)
     snapshot_builder: SnapshotBuilder = field(default_factory=SnapshotBuilder)
@@ -45,6 +49,7 @@ class SimulationEngine:
         seed: int,
         policy: Policy | None = None,
         policies: list[Policy] | None = None,
+        information_events: list[InformationEvent] | None = None,
         config_summary: dict[str, Any] | None = None,
     ) -> "SimulationEngine":
         agents = PopulationGenerator().generate(
@@ -58,6 +63,7 @@ class SimulationEngine:
         configured_policies = list(policies or [])
         if policy and all(item.id != policy.id for item in configured_policies):
             configured_policies.append(policy)
+        configured_events = list(information_events or [])
         state = SimulationState(
             simulation_id=simulation_id,
             seed=seed,
@@ -69,10 +75,14 @@ class SimulationEngine:
             config_summary=config_summary or {},
             policy=policy,
             policies=configured_policies,
+            information_events=configured_events,
         )
         engine = cls(state=state, rng=random.Random(seed))
         state.active_policy_ids = [
             item.id for item in configured_policies if item.is_active(0)
+        ]
+        state.active_information_ids = [
+            event.id for event in configured_events if event.is_active(0)
         ]
         state.metrics_history.append(
             engine.metrics_engine.create_snapshot(
@@ -105,13 +115,27 @@ class SimulationEngine:
             self.state.disease.tick_minutes,
         )
         modifiers = self.policy_engine.before_mobility(self.state)
+        active_events = tuple(
+            event for event in self.state.information_events if event.is_active(self.state.tick)
+        )
         information = self.information_engine.step(
             self.state.agents,
             modifiers.active_policies,
             self.state.tick,
+            active_events,
         )
         self.state.agents_under_local_alert = information.local_reach
         self.state.agents_under_global_alert = information.global_reach
+        self.state.agents_under_rumor = information.rumor_reach
+        self.state.active_information_ids = list(information.active_event_ids)
+        self.state.information_effect_summary = {
+            "active_information_ids": list(information.active_event_ids),
+            "official_reach": information.official_reach,
+            "rumor_reach": information.rumor_reach,
+            "false_safety_reach": information.false_safety_reach,
+            "false_danger_reach": information.false_danger_reach,
+            "anti_authority_reach": information.anti_authority_reach,
+        }
         self.transmission_engine.progress(
             self.state.agents,
             self.state.disease,
@@ -119,6 +143,12 @@ class SimulationEngine:
             self.rng,
         )
         isolated_this_tick = self.policy_engine.apply_isolation(self.state, modifiers)
+        self.cognition_engine.step(
+            self.state.agents,
+            self._real_risk_by_zone(),
+            modifiers,
+            self.state.tick,
+        )
         movement = self.mobility_engine.step(
             self.state.agents,
             self.state.world,
@@ -193,6 +223,26 @@ class SimulationEngine:
         for _ in range(ticks):
             self.step()
         return self.snapshot()
+
+    def _real_risk_by_zone(self) -> dict[str, float]:
+        """Local active-infection ratio per zone, used as objective real risk."""
+
+        population: dict[str, int] = {zone_id: 0 for zone_id in self.state.world.zones}
+        active: dict[str, int] = {zone_id: 0 for zone_id in self.state.world.zones}
+        active_states = {
+            EpidemiologicalState.EXPOSED,
+            EpidemiologicalState.INFECTED_ASYMPTOMATIC,
+            EpidemiologicalState.INFECTED_SYMPTOMATIC,
+            EpidemiologicalState.ISOLATED,
+        }
+        for agent in self.state.agents:
+            population[agent.zone_id] += 1
+            if agent.state in active_states:
+                active[agent.zone_id] += 1
+        return {
+            zone_id: (active[zone_id] / population[zone_id] if population[zone_id] else 0.0)
+            for zone_id in population
+        }
 
     def snapshot(self) -> SimulationSnapshot:
         return self.snapshot_builder.create_snapshot(self.state)

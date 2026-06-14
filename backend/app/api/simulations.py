@@ -8,7 +8,9 @@ from app.infrastructure.config_loader import ConfigLoader
 from app.infrastructure.exporters import RunExporter
 from app.schemas.simulation import (
     ExportRunResponse,
+    SimulationCognitionResponse,
     SimulationCreateRequest,
+    SimulationInformationResponse,
     SimulationMetricsResponse,
     SimulationPoliciesResponse,
     SimulationRunRequest,
@@ -66,6 +68,20 @@ def simulation_policies(simulation_id: str) -> SimulationPoliciesResponse:
     """Read configured policies and current intervention effects."""
 
     return service.policies(simulation_id)
+
+
+@router.get("/{simulation_id}/cognition", response_model=SimulationCognitionResponse)
+def simulation_cognition(simulation_id: str) -> SimulationCognitionResponse:
+    """Read current socio-cognitive aggregates and a bounded agent sample."""
+
+    return service.cognition(simulation_id)
+
+
+@router.get("/{simulation_id}/information", response_model=SimulationInformationResponse)
+def simulation_information(simulation_id: str) -> SimulationInformationResponse:
+    """Read configured information events and current exposure reach."""
+
+    return service.information(simulation_id)
 
 
 @router.post("/{simulation_id}/export", response_model=ExportRunResponse)

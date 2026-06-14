@@ -22,6 +22,12 @@ class ExperimentRunMetric(BaseModel):
     mean_contacts: float
     mean_movement_reduction: float
     mean_contact_reduction: float
+    mean_real_risk: float = 0.0
+    mean_perception_gap: float = 0.0
+    mean_trust_authority: float = 0.0
+    mean_fatigue: float = 0.0
+    mean_compliance: float = 0.0
+    mean_rumor_exposure: float = 0.0
 
 
 class ExperimentRunResult(BaseModel):

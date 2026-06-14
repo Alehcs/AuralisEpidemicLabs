@@ -42,6 +42,10 @@ class ExperimentService:
                 policy_payload = {**policy_configs[0].model_dump(), **variant.overrides}
                 policy_configs[0] = PolicyConfig.model_validate(policy_payload)
             policies = [self.loader.to_policy(policy) for policy in policy_configs]
+            information_events = [
+                self.loader.to_information_event(self.loader.load_information(name))
+                for name in variant.information_configs
+            ]
             runs = []
             for run_number, seed in enumerate(seeds):
                 run_id = f"{experiment.id}-{variant.id}-{run_number:02d}-{seed}"
@@ -54,6 +58,7 @@ class ExperimentService:
                     seed=seed,
                     policy=policies[0] if len(policies) == 1 else None,
                     policies=policies,
+                    information_events=information_events,
                     config_summary={
                         "experiment_id": experiment.id,
                         "variant_id": variant.id,
@@ -87,6 +92,24 @@ class ExperimentService:
                     ),
                     "mean_contact_reduction": round(
                         fmean(item.contact_reduction_estimate for item in history), 6
+                    ),
+                    "mean_real_risk": round(
+                        fmean(item.mean_real_risk for item in history), 6
+                    ),
+                    "mean_perception_gap": round(
+                        fmean(item.mean_perception_gap for item in history), 6
+                    ),
+                    "mean_trust_authority": round(
+                        fmean(item.mean_trust_authority for item in history), 6
+                    ),
+                    "mean_fatigue": round(
+                        fmean(item.mean_fatigue for item in history), 6
+                    ),
+                    "mean_compliance": round(
+                        fmean(item.mean_compliance for item in history), 6
+                    ),
+                    "mean_rumor_exposure": round(
+                        fmean(item.mean_rumor_exposure for item in history), 6
                     ),
                 }
                 run = {"run_id": run_id, "variant_id": variant.id, "seed": seed, "metrics": metrics}

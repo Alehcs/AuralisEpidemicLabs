@@ -8,18 +8,27 @@ from pydantic import BaseModel, ValidationError
 
 from app.core.errors import ConfigNotFoundError, ConfigValidationError
 from app.domain.disease import DiseaseProfile
+from app.domain.information import InformationEvent
 from app.domain.policy import Policy
 from app.domain.world import Route, World, Zone
 from app.schemas.configs import (
     AgentPopulationConfig,
     DiseaseConfig,
     ExperimentConfig,
+    InformationEventConfig,
     PolicyConfig,
     ScenarioConfig,
 )
 
 ConfigModel = TypeVar("ConfigModel", bound=BaseModel)
-SUPPORTED_CATEGORIES = {"scenarios", "diseases", "populations", "policies", "experiments"}
+SUPPORTED_CATEGORIES = {
+    "scenarios",
+    "diseases",
+    "populations",
+    "policies",
+    "experiments",
+    "information",
+}
 
 
 class ConfigLoader:
@@ -99,6 +108,11 @@ class ConfigLoader:
 
         return self.load_model("experiments", name, ExperimentConfig)
 
+    def load_information(self, name: str) -> InformationEventConfig:
+        """Load and validate one official-message or rumor event config."""
+
+        return self.load_model("information", name, InformationEventConfig)
+
     @staticmethod
     def to_world(config: ScenarioConfig) -> World:
         """Convert a validated scenario into pure domain entities."""
@@ -156,6 +170,23 @@ class ConfigLoader:
             contact_impact=config.resolved_impact("contact_impact"),
             transmission_impact=config.resolved_impact("transmission_impact"),
             parameters={"trigger": config.trigger, "effects": config.effects},
+        )
+
+    @staticmethod
+    def to_information_event(config: InformationEventConfig) -> InformationEvent:
+        """Convert a validated information config into a scheduled domain event."""
+
+        return InformationEvent(
+            id=config.id,
+            event_type=config.event_type,
+            source=config.source,
+            start_tick=config.start_tick,
+            end_tick=config.end_tick,
+            target_zone_id=config.target_zone_id,
+            intensity=config.intensity,
+            reach=config.reach,
+            accuracy=config.accuracy,
+            decay_rate=config.decay_rate,
         )
 
     def _category_directory(self, category: str) -> Path:

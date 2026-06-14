@@ -26,6 +26,21 @@ class MetricsSnapshot:
     mean_contacts: float = 0.0
     movement_reduction_estimate: float = 0.0
     contact_reduction_estimate: float = 0.0
+    # --- Phase 4 socio-cognitive and information aggregates ---
+    mean_real_risk: float = 0.0
+    mean_perception_gap: float = 0.0
+    mean_trust_authority: float = 0.0
+    mean_trust_peers: float = 0.0
+    mean_fatigue: float = 0.0
+    mean_fear: float = 0.0
+    mean_curiosity: float = 0.0
+    mean_compliance: float = 0.0
+    mean_rumor_belief: float = 0.0
+    mean_rumor_exposure: float = 0.0
+    rumor_exposure_count: int = 0
+    official_alert_exposure_count: int = 0
+    false_safety_exposure_count: int = 0
+    anti_authority_exposure_count: int = 0
     policy_effect_summary: dict[str, Any] = field(default_factory=dict)
 
 
@@ -42,4 +57,6 @@ class ZoneMetricsSnapshot:
     risk_level_simple: float
     mean_perceived_risk: float = 0.0
     mean_alert_exposure: float = 0.0
+    mean_rumor_exposure: float = 0.0
+    mean_fatigue: float = 0.0
     active_policies: tuple[str, ...] = ()

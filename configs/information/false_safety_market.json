@@ -1,0 +1,12 @@
+{
+  "id": "false_safety_market",
+  "event_type": "false_safety_rumor",
+  "source": "social_chatter",
+  "start_tick": 24,
+  "end_tick": 240,
+  "target_zone_id": "market",
+  "intensity": 0.7,
+  "reach": 0.8,
+  "accuracy": 0.1,
+  "decay_rate": 0.05
+}
