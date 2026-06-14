@@ -2,7 +2,9 @@
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from app.domain.policy import PolicyType
 
 
 class ZoneConfig(BaseModel):
@@ -124,13 +126,25 @@ class PolicyConfig(BaseModel):
     id: str = Field(min_length=1)
     name: str = Field(min_length=1)
     scope: Literal["global", "local"]
-    policy_type: str = Field(default="alert", min_length=1)
+    policy_type: PolicyType = PolicyType.LOCAL_ALERT
     intensity: float = Field(default=0.5, ge=0, le=1)
     start_tick: int = Field(default=0, ge=0)
     end_tick: int | None = Field(default=None, ge=0)
     target_zone_id: str | None = None
+    compliance_requirement: float = Field(default=0.0, ge=0, le=1)
+    mobility_impact: float | None = Field(default=None, ge=0, le=1)
+    contact_impact: float | None = Field(default=None, ge=0, le=1)
+    transmission_impact: float | None = Field(default=None, ge=0, le=1)
     trigger: dict[str, Any] = Field(default_factory=dict)
     effects: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("policy_type", mode="before")
+    @classmethod
+    def normalize_policy_type(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            normalized = value.lower()
+            return PolicyType.LOCAL_ALERT if normalized == "alert" else normalized
+        return value
 
     @model_validator(mode="after")
     def validate_schedule(self) -> "PolicyConfig":
@@ -138,15 +152,37 @@ class PolicyConfig(BaseModel):
             raise ValueError("policy end_tick must be greater than or equal to start_tick")
         if self.scope == "local" and not self.target_zone_id:
             raise ValueError("local policies require target_zone_id")
+        if self.policy_type in {PolicyType.LOCAL_ALERT, PolicyType.ZONE_CLOSURE} and not self.target_zone_id:
+            raise ValueError(f"{self.policy_type.value} policies require target_zone_id")
         return self
+
+    def resolved_impact(self, name: str, default: float = 0.0) -> float:
+        """Read an explicit impact or its backward-compatible effects value."""
+
+        explicit = getattr(self, name)
+        if explicit is not None:
+            return explicit
+        legacy_names = {
+            "mobility_impact": "mobility_reduction",
+            "contact_impact": "contact_reduction",
+            "transmission_impact": "transmission_reduction",
+        }
+        return float(self.effects.get(legacy_names[name], default))
 
 
 class ExperimentVariantConfig(BaseModel):
     """One named treatment arm in a batch experiment."""
 
     id: str = Field(min_length=1)
-    policy_config: str = Field(min_length=1)
+    policy_config: str | None = None
+    policy_configs: list[str] = Field(default_factory=list)
     overrides: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def validate_policy_references(self) -> "ExperimentVariantConfig":
+        if self.policy_config and self.policy_configs:
+            raise ValueError("use policy_config or policy_configs, not both")
+        return self
 
 
 class ExperimentConfig(BaseModel):

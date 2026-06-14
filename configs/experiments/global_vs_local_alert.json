@@ -1,6 +1,6 @@
 {
   "id": "global_vs_local_alert",
-  "name": "Global vs Local Alert",
+  "name": "Baseline vs Global and Local Alerts",
   "scenario_config": "district_v1_market_outbreak",
   "disease_config": "respiratory_like_v1",
   "population_config": "default_population_v1",
@@ -9,14 +9,23 @@
   "ticks": 168,
   "variants": [
     {
-      "id": "global_alert",
-      "policy_config": "local_alert_policy",
-      "overrides": {"scope": "global"}
+      "id": "baseline_no_policy",
+      "policy_configs": []
     },
     {
-      "id": "local_alert",
-      "policy_config": "local_alert_policy",
-      "overrides": {"scope": "local"}
+      "id": "global_alert",
+      "policy_config": "global_alert_policy"
+    },
+    {
+      "id": "local_alert_market",
+      "policy_config": "local_alert_policy"
+    },
+    {
+      "id": "local_alert_plus_isolation",
+      "policy_configs": [
+        "local_alert_policy",
+        "isolation_encouragement_policy"
+      ]
     }
   ]
 }

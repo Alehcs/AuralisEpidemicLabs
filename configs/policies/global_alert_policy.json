@@ -1,0 +1,21 @@
+{
+  "id": "global_alert_policy",
+  "name": "District-wide Official Alert",
+  "scope": "global",
+  "policy_type": "global_alert",
+  "intensity": 0.7,
+  "start_tick": 24,
+  "end_tick": 240,
+  "compliance_requirement": 0.2,
+  "mobility_impact": 0.22,
+  "contact_impact": 0.28,
+  "transmission_impact": 0.08,
+  "trigger": {
+    "metric": "infectious_ratio",
+    "threshold": 0.02,
+    "target": "district"
+  },
+  "effects": {
+    "risk_message_intensity": 0.7
+  }
+}

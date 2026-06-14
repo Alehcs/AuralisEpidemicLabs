@@ -31,8 +31,9 @@ class RoutineType(StrEnum):
 class Agent:
     """A future autonomous actor combining health, cognition, and location.
 
-    The initial entity intentionally stores only coarse state. Later phases
-    will add memory, trust networks, fatigue, routines, and policy response.
+    Epidemiological state remains the primary behavior driver. Phase 3 adds
+    small, bounded information and compliance attributes that policies may
+    update without coupling the entity to API or persistence concerns.
     """
 
     id: str
@@ -51,6 +52,16 @@ class Agent:
     recovered_at_tick: int | None = None
     infectiousness: float = 0.0
     perceived_risk: float = 0.0
+    alert_exposure: float = 0.0
+    official_alert_exposure: float = 0.0
+    local_alert_exposure: float = 0.0
+    global_alert_exposure: float = 0.0
+    compliance_tendency: float = 0.5
+    isolation_compliance: float = 0.5
+    last_alert_tick: int | None = None
+    policy_memory: dict[str, float] = field(default_factory=dict)
+    pre_isolation_state: EpidemiologicalState | None = None
+    isolation_started_tick: int | None = None
     trust: float = 0.5
     fatigue: float = 0.0
     memory: list[str] = field(default_factory=list)
@@ -62,4 +73,5 @@ class Agent:
         return self.state in {
             EpidemiologicalState.INFECTED_ASYMPTOMATIC,
             EpidemiologicalState.INFECTED_SYMPTOMATIC,
+            EpidemiologicalState.ISOLATED,
         }

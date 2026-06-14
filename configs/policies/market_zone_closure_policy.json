@@ -1,0 +1,19 @@
+{
+  "id": "market_zone_closure_policy",
+  "name": "Central Market Temporary Closure",
+  "scope": "local",
+  "policy_type": "zone_closure",
+  "intensity": 0.9,
+  "start_tick": 48,
+  "end_tick": 120,
+  "target_zone_id": "market",
+  "compliance_requirement": 0.3,
+  "mobility_impact": 0.95,
+  "contact_impact": 0.8,
+  "transmission_impact": 0.15,
+  "trigger": {
+    "metric": "local_infectious_ratio",
+    "threshold": 0.05
+  },
+  "effects": {}
+}

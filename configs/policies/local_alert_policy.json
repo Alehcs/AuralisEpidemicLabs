@@ -7,6 +7,10 @@
   "start_tick": 24,
   "end_tick": 240,
   "target_zone_id": "market",
+  "compliance_requirement": 0.2,
+  "mobility_impact": 0.3,
+  "contact_impact": 0.35,
+  "transmission_impact": 0.08,
   "trigger": {
     "metric": "infectious_ratio",
     "threshold": 0.02,

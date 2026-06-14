@@ -25,11 +25,17 @@ class SimulationState:
     cumulative_infections: int
     config_summary: dict[str, Any] = field(default_factory=dict)
     policy: Policy | None = None
+    policies: list[Policy] = field(default_factory=list)
     new_infections: int = 0
     metrics_history: list[MetricsSnapshot] = field(default_factory=list)
     contact_history: list[ContactRecord] = field(default_factory=list)
     snapshots_history: list[dict[str, Any]] = field(default_factory=list)
     active_policy_ids: list[str] = field(default_factory=list)
+    policy_effect_summary: dict[str, Any] = field(default_factory=dict)
+    movement_reduction_estimate: float = 0.0
+    contact_reduction_estimate: float = 0.0
+    agents_under_local_alert: int = 0
+    agents_under_global_alert: int = 0
 
 
 @dataclass(frozen=True, slots=True)

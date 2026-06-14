@@ -4,9 +4,10 @@ Auralis Epidemic Labs is a socio-cognitive, agent-based simulation workspace
 for studying synthetic epidemic outbreaks, information exposure, risk
 perception, trust, fatigue, mobility, and policy response.
 
-This repository currently contains **Phase 2: scheduled mobility, aggregate
-contact records, local export/replay, and deterministic batch experiments**. It
-implements a synthetic SEIR-style model, not a calibrated real-world disease.
+This repository currently contains **Phase 3: real policy effects and a minimal
+official-alert information model**, built on deterministic mobility, aggregate
+contacts, local export/replay, and batch experiments. It implements a synthetic
+SEIR-style model, not a calibrated real-world disease.
 
 For the current implementation status, decisions, contracts, and next-step
 context, read [`context.md`](context.md) before starting new work.
@@ -95,7 +96,7 @@ claim. Generated runtime data should be written beneath `outputs/`.
 
 ## Optional Docker Support
 
-Docker is not required for Phase 2. `docker-compose.yml` contains only an
+Docker is not required for Phase 3. `docker-compose.yml` contains only an
 opt-in PostgreSQL service reserved for later persistence work:
 
 ```bash
@@ -104,7 +105,7 @@ docker compose --profile future-db up -d postgres
 
 The backend intentionally has no PostgreSQL driver or database dependency yet.
 
-## Phase 2 Capabilities
+## Phase 3 Capabilities
 
 Implemented now:
 
@@ -115,22 +116,29 @@ Implemented now:
 - Per-zone aggregate contact records retained by tick
 - Susceptible, exposed, asymptomatic, symptomatic, recovered, and isolated states
 - Functional create, step, run, state, and metrics endpoints
-- Scheduled policy lifecycle hooks with intentionally neutral effects
+- Local/global alerts with deterministic exposure and perceived-risk updates
+- Zone closures with target avoidance and strong local contact reduction
+- Symptomatic isolation encouragement driven by seeded compliance traits
+- Policy multipliers for optional movement, contacts, and transmission
+- Per-tick policy reach, isolation, risk, exposure, and reduction metrics
+- Multiple policies per simulation and `GET /simulations/{id}/policies`
 - Local run export and compact snapshot replay endpoints
 - First deterministic headless experiment comparison runner
 - Per-tick and per-zone metrics plus compact visualization snapshots
-- React controls, simulation clock, contacts, export, and experiment summary
+- Four-arm baseline/global/local/local-plus-isolation batch comparison
+- React policy status, alert/risk metrics, zone badges, and richer experiment summary
 
 Deliberately deferred:
 
-- Socio-cognitive updates, rumor diffusion, memory, and trust networks
+- Adaptive socio-cognitive decisions, rumor diffusion, and trust networks
 - Calibrated epidemiology, demographics, and pair-level contact networks
 - Real map geometry and advanced charts or animation
 - PostgreSQL repositories, authentication, workers, and durable job execution
-- Real policy effects, advanced replay UI, and richer analysis exports
+- Advanced replay UI, policy editing, and richer analysis exports
 
-## Suggested Phase 3 / Prompt 4
+## Suggested Phase 4
 
-Implement the first real policy effects and isolation workflow, add richer
-experiment comparison/export, and introduce the minimal information exposure
-event model while preserving deterministic physical simulation behavior.
+Introduce the first adaptive cognition layer: trust and fatigue updates,
+policy-memory decay, compliance response, and official-information versus rumor
+events. Preserve deterministic seeds and keep the physical engine independent
+from API and UI concerns.

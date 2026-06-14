@@ -21,3 +21,11 @@ def test_converts_validated_configs_to_domain(config_loader: ConfigLoader) -> No
     assert world.zones["market"].contact_rate == 18.0
     assert world.destinations_from("market")
     assert disease.incubation_ticks == 84
+
+
+def test_policy_config_supports_explicit_phase_three_impacts(config_loader: ConfigLoader) -> None:
+    policy = config_loader.to_policy(config_loader.load_policy("local_alert_policy"))
+
+    assert policy.mobility_impact == 0.3
+    assert policy.contact_impact == 0.35
+    assert policy.target_zone_id == "market"

@@ -11,6 +11,7 @@ from app.schemas.simulation import (
     SimulationCreateRequest,
     ExportRunResponse,
     SimulationMetricsResponse,
+    SimulationPoliciesResponse,
     SimulationStateResponse,
     SimulationSnapshotResponse,
 )
@@ -31,7 +32,11 @@ class SimulationService:
         scenario = self.loader.load_scenario(request.scenario_config)
         disease_config = self.loader.load_disease(request.disease_config)
         population = self.loader.load_population(request.population_config)
-        policy_config = self.loader.load_policy(request.policy_config) if request.policy_config else None
+        policy_names = request.policy_configs or (
+            [request.policy_config] if request.policy_config else []
+        )
+        policy_configs = [self.loader.load_policy(name) for name in policy_names]
+        policies = [self.loader.to_policy(config) for config in policy_configs]
 
         simulation_id = str(uuid4())
         try:
@@ -42,12 +47,14 @@ class SimulationService:
                 population_config=population,
                 outbreak=scenario.initial_outbreak,
                 seed=request.seed,
-                policy=self.loader.to_policy(policy_config) if policy_config else None,
+                policy=policies[0] if len(policies) == 1 else None,
+                policies=policies,
                 config_summary={
                     "scenario_config": request.scenario_config,
                     "disease_config": request.disease_config,
                     "population_config": request.population_config,
                     "policy_config": request.policy_config,
+                    "policy_configs": policy_names,
                     "seed": request.seed,
                 },
             )
@@ -82,6 +89,36 @@ class SimulationService:
         return SimulationMetricsResponse(
             simulation_id=simulation_id,
             history=[MetricsSnapshotResponse.model_validate(asdict(item)) for item in engine.state.metrics_history],
+        )
+
+    def policies(self, simulation_id: str) -> SimulationPoliciesResponse:
+        """Return configured policies and their current activation state."""
+
+        engine = self._get_engine(simulation_id)
+        policies = engine.state.policies or (
+            [engine.state.policy] if engine.state.policy else []
+        )
+        return SimulationPoliciesResponse.model_validate(
+            {
+                "simulation_id": simulation_id,
+                "tick": engine.state.tick,
+                "configured": [
+                    {
+                        "id": policy.id,
+                        "name": policy.name,
+                        "type": policy.policy_type.value,
+                        "scope": policy.scope,
+                        "target_zone_id": policy.target_zone_id,
+                        "active": policy.is_active(engine.state.tick),
+                        "start_tick": policy.start_tick,
+                        "end_tick": policy.end_tick,
+                        "intensity": policy.intensity,
+                    }
+                    for policy in policies
+                ],
+                "active_policy_ids": engine.state.active_policy_ids,
+                "effect_summary": engine.state.policy_effect_summary,
+            }
         )
 
     def export(self, simulation_id: str) -> ExportRunResponse:

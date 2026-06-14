@@ -6,38 +6,33 @@ Last updated: 2026-06-14
 
 Read this file before planning or implementing changes. Update it whenever work
 changes architecture, capabilities, public contracts, important decisions,
-commands, configuration, limitations, or the recommended next step. Keep it
-concise; code and tests remain the final source of truth.
+commands, configuration, limitations, or the recommended next step. Code and
+tests remain the final source of truth.
 
 ## Project Goal
 
-Auralis Epidemic Labs is a socio-cognitive agent-based simulation platform for
-synthetic epidemic outbreaks, mobility, information exposure, risk perception,
-trust, fatigue, and policy response. It supports interactive and headless use.
-Configurations are research inputs, not medical guidance or calibrated disease
-representations.
+Auralis Epidemic Labs is a deterministic socio-cognitive agent-based simulation
+platform for synthetic epidemic outbreaks, mobility, information exposure,
+risk perception, trust, fatigue, and policy response. Configurations are
+research inputs, not medical guidance or calibrated disease representations.
 
 ## Current Phase
 
-Phase 2 is implemented: Scheduled Mobility, Contacts, Export/Replay, and Batch
-Experiments.
+Phase 3 is implemented: Real Policy Effects and Minimal Official Information
+Exposure.
 
 Currently functional:
 
 - FastAPI backend and React/TypeScript/Vite frontend.
-- Validated JSON scenario, disease, population, policy, and experiment configs.
-- Deterministic seeded population and outbreak creation.
-- Stable home, work, and optional school assignment across seven routine types.
-- Simulation clock with day, hour, minute, and time-of-day labels.
-- Schedule-based movement over directed routes; isolated agents never move.
-- Minimal susceptible/exposed/asymptomatic/symptomatic/recovered/isolated cycle.
-- O(n) zone contact aggregation with retained per-tick contact records.
-- Global and per-zone metrics, compact agent samples, and snapshot history.
-- In-memory create, step, run, state, and metrics API flow.
-- Scheduled policy hooks with deliberately neutral Phase 2 effects.
-- Deterministic local run export and compact replay loading.
-- Headless batch policy-variant comparison and report generation.
-- Frontend clock, contact counts, export button, and experiment result table.
+- Deterministic seeded population, schedules, movement, contacts, and SEIR cycle.
+- Multiple scheduled policies per simulation with backward-compatible single-policy input.
+- `local_alert`, `global_alert`, `zone_closure`, and `isolation_encouragement` policy types.
+- Bounded agent alert exposure, perceived risk, policy memory, and seeded compliance traits.
+- Optional movement reduction, target-zone avoidance, contact reduction, and transmission modifiers.
+- Symptomatic isolation with strongly reduced contacts and continued clinical recovery.
+- Policy reach, mean risk/exposure, isolation, contacts, and reduction metrics in history/snapshots.
+- Local run export/replay and four-arm deterministic batch comparison.
+- Frontend policy list, risk/exposure metrics, isolated count, reduction estimates, zone badges, and batch table.
 
 ## Architectural Rules
 
@@ -45,35 +40,35 @@ Currently functional:
 - Domain/simulation code must not depend on FastAPI, React, PostgreSQL, or UI.
 - `application/` coordinates use cases; `api/` adapts HTTP; `schemas/` owns
   Pydantic contracts; `infrastructure/` owns files/config/export adapters.
-- Live simulations remain in process memory.
-- Exported artifacts live under `outputs/` and are not database persistence.
-- Every engine owns a private `random.Random`; identical config and seed must
-  produce identical assignments, movement, contacts, and snapshots.
-- Policy hooks exist at stable lifecycle points, but effects must remain neutral
-  until explicitly designed and tested.
+- Live simulations remain in process memory; exports under `outputs/` are not persistence.
+- Every engine owns a private `random.Random`; identical config and seed must produce identical snapshots.
+- Policy effects are bounded multipliers resolved by `PolicyHookEngine` and consumed by independent engines.
+- Official alerts are modeled by `InformationEngine`; rumor propagation remains absent.
 
 ## Simulation Tick
 
-1. Run active policy `before_mobility` hook.
-2. Move agents toward schedule destinations.
-3. Progress existing exposed/infected agents.
-4. Run `before_contacts`; aggregate zone contacts.
-5. Run `before_transmission`; apply stochastic local transmission.
-6. Compute metrics; run `after_metrics`.
-7. Build and retain a compact snapshot.
+1. Resolve active policies and intervention multipliers.
+2. Apply official-alert exposure and perceived-risk updates.
+3. Progress disease and apply deterministic symptomatic isolation.
+4. Move agents, reducing optional movement and avoiding closed targets.
+5. Aggregate zone contacts with policy and isolation multipliers.
+6. Apply local stochastic transmission with contact/transmission multipliers.
+7. Compute metrics, run the final policy hook, and retain a compact snapshot.
 
-Transmission uses `beta_base`, effective contacts per day, tick duration,
-infectious prevalence, and bounded local density. Pairwise matrices are avoided.
+Transmission remains an aggregate zone hazard using `beta_base`, tick duration,
+contact rate, local density, infectious prevalence, and policy multipliers.
+Pairwise contact matrices are intentionally avoided.
 
 ## Important Contracts
 
-Simulation and replay endpoints:
+Simulation endpoints:
 
 - `POST /simulations/create`
 - `POST /simulations/{simulation_id}/step`
 - `POST /simulations/{simulation_id}/run`
 - `GET /simulations/{simulation_id}/state`
 - `GET /simulations/{simulation_id}/metrics`
+- `GET /simulations/{simulation_id}/policies`
 - `POST /simulations/{simulation_id}/export`
 - `GET /runs`
 - `GET /runs/{run_id}/metadata`
@@ -81,58 +76,48 @@ Simulation and replay endpoints:
 - `POST /experiments/run`
 - `GET /experiments/{experiment_id}/results`
 
-Snapshot fields include `simulation_id`, `tick`, fractional `day`, structured
-`time`, `agents_summary`, `zone_summary`, `contact_summary`, `active_policies`,
-`metrics`, and `sample_agents_for_visualization`.
-
-Run export files:
-
-- `metadata.json`
-- `config_summary.json`
-- `metrics_history.json`
-- `snapshots.jsonl`
-- `final_summary.json`
-
-Experiment report files:
-
-- `experiment_summary.json`
-- `variant_results.json`
-- `run_index.json`
+`SimulationCreateRequest` accepts legacy `policy_config` or `policy_configs`.
+Snapshots include active policy IDs, per-zone policy IDs, policy effect summary,
+alert/risk metrics, contact summaries, and sampled agent exposure/compliance.
 
 ## Primary Configs
 
-- `configs/scenarios/district_v1_market_outbreak.json`
-- `configs/diseases/respiratory_like_v1.json`
-- `configs/populations/default_population_v1.json`
 - `configs/policies/local_alert_policy.json`
+- `configs/policies/global_alert_policy.json`
+- `configs/policies/isolation_encouragement_policy.json`
+- `configs/policies/market_zone_closure_policy.json`
 - `configs/experiments/global_vs_local_alert.json`
 
-Defaults: 5,000 agents, frontend seed 42, 60-minute ticks, seven routine types,
-and a local alert scheduled from tick 24. Policy variants currently produce the
-same epidemiological effects because hooks are intentionally neutral.
+The batch experiment variants are `baseline_no_policy`, `global_alert`,
+`local_alert_market`, and `local_alert_plus_isolation`, sharing seeds.
 
-## Verification Baseline
+## Verification Status
 
-Last verified on 2026-06-14:
+Executed on 2026-06-14:
 
-- Backend: `18 passed` with Pytest.
-- Frontend TypeScript and production build: passed with Vite 8.0.16.
-- `npm audit`: 0 vulnerabilities.
-- Browser integration: create, run 24 ticks, schedule time/contact update,
-  export, batch experiment, and experiment table completed without console errors.
-- Replay integration: exported run metadata and 25 snapshots for ticks 0-24
-  loaded successfully; stored experiment results returned two variants.
+- `python3 -m compileall -q app tests`: passed.
+- `npm run typecheck`: passed.
+- `npm run build`: passed with Vite 8.0.16.
+- `git diff --check`: passed.
+
+Not completed in this session because sandbox escalation was rejected after the
+environment reached its approval/usage limit:
+
+- Backend dependency installation and `pytest`.
+- Registry-backed `npm audit` (the sandbox DNS request failed first).
+- Local browser verification (binding port 5173 was denied).
+
+Run when the environment permits:
 
 ```bash
 cd backend
 source .venv/bin/activate
+python -m pip install -r requirements.txt
 pytest
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 ```bash
 cd frontend
-npm install
 npm run typecheck
 npm run build
 npm audit
@@ -141,30 +126,20 @@ npm run dev
 
 ## Intentional Placeholders
 
-- Cognitive decisions, trust, fatigue, memory, and behavior adaptation.
-- Information and rumor propagation.
-- Real policy effects, isolation incentives, closures, and alerts.
-- Pair-level contact networks and advanced replay UI.
+- Adaptive trust, fatigue, cognitive decisions, and behavior change.
+- Rumor creation, diffusion, source credibility, and social networks.
+- Calibrated epidemiology, demographics, and pair-level contacts.
 - PostgreSQL, authentication, workers, WebSockets, and LLMs.
-- Real district geometry, advanced visualization, and animation.
+- Real district geometry, advanced animation, and replay controls.
 
 ## Recommended Next Step
 
-Phase 3 / Prompt 4 should implement real alert/closure/isolation effects,
-richer experiment comparison/export, and a minimal information exposure event
-model without yet implementing full cognition or rumor propagation.
+Phase 4 should implement adaptive cognition and competing information: trust and
+fatigue updates, policy-memory decay, compliance response, and official versus
+rumor events. Keep all updates deterministic and policy/config driven.
 
 ## Update Protocol
 
-After meaningful work:
-
-1. Update `Last updated`.
-2. Revise phase and functional capabilities.
-3. Record architectural decisions future work must preserve.
-4. Update API, snapshot, config, and file contracts.
-5. Record only verification commands actually executed.
-6. Remove completed placeholders and add real limitations.
-7. Keep the recommended next step aligned with project state.
-
-Do not record transient process IDs, generated run IDs, debugging notes, or
-unaccepted speculation.
+After meaningful work, revise the phase, contracts, verification facts,
+placeholders, and recommended next step. Do not record transient process IDs,
+generated run IDs, debugging notes, or speculation.

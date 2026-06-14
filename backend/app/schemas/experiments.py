@@ -17,6 +17,11 @@ class ExperimentRunMetric(BaseModel):
     cumulative_infections: int
     peak_active_infections: int
     tick_of_peak: int
+    mean_perceived_risk: float
+    mean_alert_exposure: float
+    mean_contacts: float
+    mean_movement_reduction: float
+    mean_contact_reduction: float
 
 
 class ExperimentRunResult(BaseModel):

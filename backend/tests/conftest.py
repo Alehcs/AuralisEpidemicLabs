@@ -21,11 +21,17 @@ def engine_factory(config_loader: ConfigLoader):
         seed: int = 42,
         simulation_id: str = "test-simulation",
         with_policy: bool = True,
+        policy_names: list[str] | None = None,
     ) -> SimulationEngine:
         scenario = config_loader.load_scenario("district_v1_market_outbreak")
         disease = config_loader.load_disease("respiratory_like_v1")
         population = config_loader.load_population("default_population_v1")
-        policy_config = config_loader.load_policy("local_alert_policy")
+        names = policy_names if policy_names is not None else (
+            ["local_alert_policy"] if with_policy else []
+        )
+        policies = [
+            config_loader.to_policy(config_loader.load_policy(name)) for name in names
+        ]
         return SimulationEngine.create(
             simulation_id=simulation_id,
             world=config_loader.to_world(scenario),
@@ -33,7 +39,8 @@ def engine_factory(config_loader: ConfigLoader):
             population_config=population,
             outbreak=scenario.initial_outbreak,
             seed=seed,
-            policy=config_loader.to_policy(policy_config) if with_policy else None,
+            policy=policies[0] if len(policies) == 1 else None,
+            policies=policies,
             config_summary={"seed": seed},
         )
 

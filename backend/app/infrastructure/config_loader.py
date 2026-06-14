@@ -151,6 +151,10 @@ class ConfigLoader:
             start_tick=config.start_tick,
             end_tick=config.end_tick,
             target_zone_id=config.target_zone_id,
+            compliance_requirement=config.compliance_requirement,
+            mobility_impact=config.resolved_impact("mobility_impact"),
+            contact_impact=config.resolved_impact("contact_impact"),
+            transmission_impact=config.resolved_impact("transmission_impact"),
             parameters={"trigger": config.trigger, "effects": config.effects},
         )
 

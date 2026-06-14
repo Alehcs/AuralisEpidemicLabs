@@ -7,6 +7,7 @@ from app.domain.agent import Agent, EpidemiologicalState
 from app.domain.disease import DiseaseProfile
 from app.domain.world import World
 from app.simulation.contacts import ContactBatch
+from app.simulation.policies import PolicyModifiers
 
 
 class TransmissionEngine:
@@ -51,9 +52,11 @@ class TransmissionEngine:
         disease: DiseaseProfile,
         tick: int,
         rng: random.Random,
+        policy_modifiers: PolicyModifiers | None = None,
     ) -> dict[str, int]:
         """Apply the Phase 1 prevalence hazard and return infections by zone."""
 
+        modifiers = policy_modifiers or PolicyModifiers()
         infections_by_zone: dict[str, int] = {}
         tick_fraction = disease.tick_minutes / 1440
         for context in contact_batch.contexts.values():
@@ -69,6 +72,8 @@ class TransmissionEngine:
                 * zone.contact_rate
                 * density_modifier
                 * infectious_prevalence
+                * modifiers.contact_multiplier(context.zone_id)
+                * modifiers.transmission_multiplier(context.zone_id)
             )
             probability = 1 - math.exp(-hazard)
             new_infections = 0

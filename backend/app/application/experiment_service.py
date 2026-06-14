@@ -34,9 +34,14 @@ class ExperimentService:
         run_index = []
 
         for variant in experiment.variants:
-            base_policy = self.loader.load_policy(variant.policy_config)
-            policy_payload = {**base_policy.model_dump(), **variant.overrides}
-            policy_config = PolicyConfig.model_validate(policy_payload)
+            policy_names = variant.policy_configs or (
+                [variant.policy_config] if variant.policy_config else []
+            )
+            policy_configs = [self.loader.load_policy(name) for name in policy_names]
+            if policy_configs and variant.overrides:
+                policy_payload = {**policy_configs[0].model_dump(), **variant.overrides}
+                policy_configs[0] = PolicyConfig.model_validate(policy_payload)
+            policies = [self.loader.to_policy(policy) for policy in policy_configs]
             runs = []
             for run_number, seed in enumerate(seeds):
                 run_id = f"{experiment.id}-{variant.id}-{run_number:02d}-{seed}"
@@ -47,7 +52,8 @@ class ExperimentService:
                     population_config=population,
                     outbreak=scenario.initial_outbreak,
                     seed=seed,
-                    policy=self.loader.to_policy(policy_config),
+                    policy=policies[0] if len(policies) == 1 else None,
+                    policies=policies,
                     config_summary={
                         "experiment_id": experiment.id,
                         "variant_id": variant.id,
@@ -56,6 +62,7 @@ class ExperimentService:
                 )
                 snapshot = engine.run(experiment.ticks)
                 peak = max(engine.state.metrics_history, key=lambda item: item.active_infections)
+                history = engine.state.metrics_history[1:] or engine.state.metrics_history
                 metrics = {
                     "final_susceptible": snapshot.metrics.susceptible_count,
                     "final_exposed": snapshot.metrics.exposed_count,
@@ -68,6 +75,19 @@ class ExperimentService:
                     "cumulative_infections": snapshot.metrics.cumulative_infections,
                     "peak_active_infections": peak.active_infections,
                     "tick_of_peak": peak.tick,
+                    "mean_perceived_risk": round(
+                        fmean(item.mean_perceived_risk for item in history), 6
+                    ),
+                    "mean_alert_exposure": round(
+                        fmean(item.mean_alert_exposure for item in history), 6
+                    ),
+                    "mean_contacts": round(fmean(item.mean_contacts for item in history), 6),
+                    "mean_movement_reduction": round(
+                        fmean(item.movement_reduction_estimate for item in history), 6
+                    ),
+                    "mean_contact_reduction": round(
+                        fmean(item.contact_reduction_estimate for item in history), 6
+                    ),
                 }
                 run = {"run_id": run_id, "variant_id": variant.id, "seed": seed, "metrics": metrics}
                 runs.append(run)

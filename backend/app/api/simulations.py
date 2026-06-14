@@ -10,6 +10,7 @@ from app.schemas.simulation import (
     ExportRunResponse,
     SimulationCreateRequest,
     SimulationMetricsResponse,
+    SimulationPoliciesResponse,
     SimulationRunRequest,
     SimulationStateResponse,
 )
@@ -58,6 +59,13 @@ def simulation_metrics(simulation_id: str) -> SimulationMetricsResponse:
     """Read metric history accumulated by a simulation."""
 
     return service.metrics(simulation_id)
+
+
+@router.get("/{simulation_id}/policies", response_model=SimulationPoliciesResponse)
+def simulation_policies(simulation_id: str) -> SimulationPoliciesResponse:
+    """Read configured policies and current intervention effects."""
+
+    return service.policies(simulation_id)
 
 
 @router.post("/{simulation_id}/export", response_model=ExportRunResponse)

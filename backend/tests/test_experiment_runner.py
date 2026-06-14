@@ -19,11 +19,17 @@ def test_batch_runner_writes_summary_files(
     for category in ("scenarios", "diseases", "policies", "populations", "experiments"):
         (config_root / category).mkdir(parents=True)
     source_root = config_loader.base_directory
-    for category, name in (
+    config_references = [
         ("scenarios", experiment.scenario_config),
         ("diseases", experiment.disease_config),
-        ("policies", "local_alert_policy"),
-    ):
+    ]
+    policy_names = {
+        name
+        for variant in experiment.variants
+        for name in (variant.policy_configs or ([variant.policy_config] if variant.policy_config else []))
+    }
+    config_references.extend(("policies", name) for name in sorted(policy_names))
+    for category, name in config_references:
         (config_root / category / f"{name}.json").write_text(
             (source_root / category / f"{name}.json").read_text(encoding="utf-8"),
             encoding="utf-8",
@@ -35,7 +41,7 @@ def test_batch_runner_writes_summary_files(
         encoding="utf-8",
     )
     experiment_payload = experiment.model_dump(mode="json")
-    experiment_payload.update({"repetitions": 1, "seeds": [9], "ticks": 24})
+    experiment_payload.update({"repetitions": 1, "seeds": [9], "ticks": 36})
     (config_root / "experiments" / "global_vs_local_alert.json").write_text(
         json.dumps(experiment_payload),
         encoding="utf-8",
@@ -51,8 +57,13 @@ def test_batch_runner_writes_summary_files(
 
     report_directory = output_root / "reports" / "global_vs_local_alert"
     assert result.status == "completed"
-    assert len(result.variants) == 2
+    assert len(result.variants) == 4
     assert (report_directory / "experiment_summary.json").is_file()
     assert (report_directory / "variant_results.json").is_file()
     assert (report_directory / "run_index.json").is_file()
     assert service.results("global_vs_local_alert").variants
+
+    aggregates = {variant.variant_id: variant.aggregate for variant in result.variants}
+    assert aggregates["baseline_no_policy"]["mean_alert_exposure"] == 0
+    assert aggregates["global_alert"]["mean_alert_exposure"] > 0
+    assert aggregates["local_alert_market"]["mean_contact_reduction"] > 0

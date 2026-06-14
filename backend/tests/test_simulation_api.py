@@ -48,6 +48,10 @@ def test_create_step_run_state_and_metrics_flow() -> None:
             assert metrics.status_code == 200
             assert len(metrics.json()["history"]) == 5
 
+            policies = await client.get(f"/simulations/{simulation_id}/policies")
+            assert policies.status_code == 200
+            assert policies.json()["configured"][0]["id"] == "local_alert_policy"
+
             missing = await client.get("/simulations/unknown/state")
             assert missing.status_code == 404
 

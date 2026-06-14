@@ -44,6 +44,8 @@ class PopulationGenerator:
                     school_zone_id=school_zone_id,
                     routine_type=routine,
                     movement_tendency=round(rng.uniform(0.55, 1.0), 6),
+                    compliance_tendency=round(rng.uniform(0.2, 0.95), 6),
+                    isolation_compliance=round(rng.uniform(0.2, 0.95), 6),
                 )
             )
 

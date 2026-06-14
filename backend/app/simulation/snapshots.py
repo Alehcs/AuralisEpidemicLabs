@@ -18,7 +18,21 @@ class SnapshotBuilder:
 
         metrics = state.metrics_history[-1]
         simulation_time = SimulationTime.from_tick(state.tick, state.disease.tick_minutes)
-        zone_summary = self.metrics_engine.create_zone_snapshots(state.agents, state.world)
+        policies = state.policies or ([state.policy] if state.policy else [])
+        active = [policy for policy in policies if policy.is_active(state.tick)]
+        policy_ids_by_zone = {
+            zone_id: tuple(
+                policy.id
+                for policy in active
+                if policy.target_zone_id == zone_id
+            )
+            for zone_id in state.world.zones
+        }
+        zone_summary = self.metrics_engine.create_zone_snapshots(
+            state.agents,
+            state.world,
+            policy_ids_by_zone,
+        )
         contact_summary = [record for record in state.contact_history if record.tick == state.tick]
         sample = [
             {
@@ -29,6 +43,9 @@ class SnapshotBuilder:
                 "routine_type": agent.routine_type.value,
                 "home_zone_id": agent.home_zone_id,
                 "intended_destination": agent.current_intended_destination,
+                "perceived_risk": agent.perceived_risk,
+                "alert_exposure": agent.alert_exposure,
+                "compliance_tendency": agent.compliance_tendency,
             }
             for agent in state.agents[:120]
         ]
