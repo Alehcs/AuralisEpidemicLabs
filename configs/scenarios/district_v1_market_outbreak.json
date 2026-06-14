@@ -1,0 +1,20 @@
+{
+  "id": "district_v1_market_outbreak",
+  "name": "District V1 - Market Outbreak",
+  "description": "Functional district seeded with an initial market-centered outbreak.",
+  "duration_steps": 336,
+  "zones": [
+    {"id": "residential_north", "name": "Residential North", "kind": "residential", "capacity": 1800},
+    {"id": "residential_south", "name": "Residential South", "kind": "residential", "capacity": 1600},
+    {"id": "market", "name": "Central Market", "kind": "commerce", "capacity": 700},
+    {"id": "transport", "name": "Transport Hub", "kind": "transport", "capacity": 900},
+    {"id": "work_school", "name": "Work and School Area", "kind": "mixed", "capacity": 1400},
+    {"id": "hospital", "name": "District Hospital", "kind": "healthcare", "capacity": 350},
+    {"id": "plaza", "name": "Public Plaza", "kind": "public", "capacity": 800},
+    {"id": "periphery", "name": "District Periphery", "kind": "periphery", "capacity": 1200}
+  ],
+  "initial_outbreak": {
+    "zone_id": "market",
+    "exposed_agents": 8
+  }
+}

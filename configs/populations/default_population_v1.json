@@ -1,0 +1,13 @@
+{
+  "id": "default_population_v1",
+  "name": "Default Behavioral Population V1",
+  "population_size": 5000,
+  "profiles": [
+    {"profile": "evaders", "proportion": 0.12},
+    {"profile": "curious", "proportion": 0.18},
+    {"profile": "altruists", "proportion": 0.20},
+    {"profile": "skeptics", "proportion": 0.17},
+    {"profile": "obedient", "proportion": 0.28},
+    {"profile": "griefers", "proportion": 0.05}
+  ]
+}

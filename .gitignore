@@ -1,0 +1,34 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+backend/.env
+
+# Node / Vite
+node_modules/
+frontend/dist/
+frontend/.env
+*.tsbuildinfo
+
+# IDEs
+.idea/
+.vscode/
+
+# Runtime outputs (directory placeholders remain tracked)
+outputs/runs/*
+outputs/snapshots/*
+outputs/reports/*
+!outputs/runs/.gitkeep
+!outputs/snapshots/.gitkeep
+!outputs/reports/.gitkeep
+
+# Local database volumes and logs
+*.log
+.postgres-data/

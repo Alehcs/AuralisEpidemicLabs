@@ -1,0 +1,22 @@
+services:
+  # Optional foundation for a later persistence phase. The current backend
+  # does not require PostgreSQL and has no database driver dependency.
+  postgres:
+    image: postgres:17-alpine
+    profiles: ["future-db"]
+    environment:
+      POSTGRES_DB: auralis
+      POSTGRES_USER: auralis
+      POSTGRES_PASSWORD: auralis_local_only
+    ports:
+      - "5432:5432"
+    volumes:
+      - auralis_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auralis -d auralis"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  auralis_postgres_data:

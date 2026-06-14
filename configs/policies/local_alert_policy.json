@@ -1,0 +1,15 @@
+{
+  "id": "local_alert_policy",
+  "name": "Local Alert Policy",
+  "scope": "local",
+  "trigger": {
+    "metric": "infectious_ratio",
+    "threshold": 0.02,
+    "target": "affected_zone"
+  },
+  "effects": {
+    "risk_message_intensity": 0.7,
+    "mobility_reduction": 0.15,
+    "trust_modifier": 0.05
+  }
+}

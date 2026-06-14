@@ -1,0 +1,20 @@
+{
+  "id": "global_vs_local_alert",
+  "name": "Global vs Local Alert",
+  "scenario_config": "district_v1_market_outbreak",
+  "disease_config": "respiratory_like_v1",
+  "population_config": "default_population_v1",
+  "repetitions": 10,
+  "variants": [
+    {
+      "id": "global_alert",
+      "policy_config": "local_alert_policy",
+      "overrides": {"scope": "global"}
+    },
+    {
+      "id": "local_alert",
+      "policy_config": "local_alert_policy",
+      "overrides": {"scope": "local"}
+    }
+  ]
+}
