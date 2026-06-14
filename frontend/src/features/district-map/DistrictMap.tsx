@@ -1,5 +1,5 @@
 import { Panel } from "../../components/ui/Panel";
-import type { ZoneSummary } from "../../types/simulation";
+import type { ContactRecord, ZoneSummary } from "../../types/simulation";
 
 const zoneNames: Record<string, string> = {
   residential_north: "Residential North",
@@ -14,6 +14,7 @@ const zoneNames: Record<string, string> = {
 
 interface DistrictMapProps {
   zones: ZoneSummary[];
+  contacts: ContactRecord[];
 }
 
 function riskBand(risk: number): string {
@@ -22,7 +23,8 @@ function riskBand(risk: number): string {
   return "low";
 }
 
-export function DistrictMap({ zones }: DistrictMapProps) {
+export function DistrictMap({ zones, contacts }: DistrictMapProps) {
+  const contactsByZone = new Map(contacts.map((record) => [record.zone_id, record]));
   const displayedZones = zones.length
     ? zones
     : Object.keys(zoneNames).map((zone_id) => ({
@@ -49,6 +51,8 @@ export function DistrictMap({ zones }: DistrictMapProps) {
               <span>Exposed <b>{zone.exposed}</b></span>
               <span>Infected <b>{zone.infected}</b></span>
               <span>Recovered <b>{zone.recovered}</b></span>
+              <span>Contacts <b>{contactsByZone.get(zone.zone_id)?.contact_count ?? 0}</b></span>
+              <span>New cases <b>{contactsByZone.get(zone.zone_id)?.new_infections ?? 0}</b></span>
             </div>
           </article>
         ))}

@@ -4,7 +4,9 @@
   "scenario_config": "district_v1_market_outbreak",
   "disease_config": "respiratory_like_v1",
   "population_config": "default_population_v1",
-  "repetitions": 10,
+  "repetitions": 2,
+  "seeds": [42, 84],
+  "ticks": 168,
   "variants": [
     {
       "id": "global_alert",

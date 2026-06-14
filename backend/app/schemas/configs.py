@@ -83,6 +83,21 @@ class AgentProfileDistribution(BaseModel):
     proportion: float = Field(gt=0, le=1)
 
 
+class RoutineDistribution(BaseModel):
+    """Relative population weight for one schedule archetype."""
+
+    routine_type: Literal[
+        "worker",
+        "student",
+        "remote",
+        "elderly",
+        "trader",
+        "healthcare",
+        "unemployed",
+    ]
+    proportion: float = Field(gt=0, le=1)
+
+
 class AgentPopulationConfig(BaseModel):
     """Population size and initial behavioral profile distribution."""
 
@@ -90,12 +105,16 @@ class AgentPopulationConfig(BaseModel):
     name: str = Field(min_length=1)
     population_size: int = Field(gt=0)
     profiles: list[AgentProfileDistribution] = Field(min_length=1)
+    routines: list[RoutineDistribution] = Field(min_length=1)
 
     @model_validator(mode="after")
     def validate_profile_distribution(self) -> "AgentPopulationConfig":
         total = sum(item.proportion for item in self.profiles)
         if abs(total - 1.0) > 1e-6:
             raise ValueError("profile proportions must sum to 1.0")
+        routine_total = sum(item.proportion for item in self.routines)
+        if abs(routine_total - 1.0) > 1e-6:
+            raise ValueError("routine proportions must sum to 1.0")
         return self
 
 
@@ -105,8 +124,21 @@ class PolicyConfig(BaseModel):
     id: str = Field(min_length=1)
     name: str = Field(min_length=1)
     scope: Literal["global", "local"]
+    policy_type: str = Field(default="alert", min_length=1)
+    intensity: float = Field(default=0.5, ge=0, le=1)
+    start_tick: int = Field(default=0, ge=0)
+    end_tick: int | None = Field(default=None, ge=0)
+    target_zone_id: str | None = None
     trigger: dict[str, Any] = Field(default_factory=dict)
     effects: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def validate_schedule(self) -> "PolicyConfig":
+        if self.end_tick is not None and self.end_tick < self.start_tick:
+            raise ValueError("policy end_tick must be greater than or equal to start_tick")
+        if self.scope == "local" and not self.target_zone_id:
+            raise ValueError("local policies require target_zone_id")
+        return self
 
 
 class ExperimentVariantConfig(BaseModel):
@@ -126,4 +158,6 @@ class ExperimentConfig(BaseModel):
     disease_config: str = Field(min_length=1)
     population_config: str = Field(min_length=1)
     repetitions: int = Field(default=1, gt=0)
+    seeds: list[int] = Field(default_factory=lambda: [42], min_length=1)
+    ticks: int = Field(default=168, gt=0, le=100_000)
     variants: list[ExperimentVariantConfig] = Field(min_length=1)

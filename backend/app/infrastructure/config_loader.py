@@ -8,6 +8,7 @@ from pydantic import BaseModel, ValidationError
 
 from app.core.errors import ConfigNotFoundError, ConfigValidationError
 from app.domain.disease import DiseaseProfile
+from app.domain.policy import Policy
 from app.domain.world import Route, World, Zone
 from app.schemas.configs import (
     AgentPopulationConfig,
@@ -135,6 +136,22 @@ class ConfigLoader:
             infectious_days=config.infectious_days,
             asymptomatic_probability=config.asymptomatic_probability,
             tick_minutes=config.tick_minutes,
+        )
+
+    @staticmethod
+    def to_policy(config: PolicyConfig) -> Policy:
+        """Convert a validated policy config into a scheduled domain hook."""
+
+        return Policy(
+            id=config.id,
+            name=config.name,
+            scope=config.scope,
+            policy_type=config.policy_type,
+            intensity=config.intensity,
+            start_tick=config.start_tick,
+            end_tick=config.end_tick,
+            target_zone_id=config.target_zone_id,
+            parameters={"trigger": config.trigger, "effects": config.effects},
         )
 
     def _category_directory(self, category: str) -> Path:

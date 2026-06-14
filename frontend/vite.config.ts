@@ -10,6 +10,7 @@ export default defineConfig({
       "/configs": "http://127.0.0.1:8000",
       "/simulations": "http://127.0.0.1:8000",
       "/experiments": "http://127.0.0.1:8000",
+      "/runs": "http://127.0.0.1:8000",
     },
   },
 });

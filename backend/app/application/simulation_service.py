@@ -5,9 +5,11 @@ from uuid import uuid4
 
 from app.core.errors import ConfigValidationError, SimulationNotFoundError
 from app.infrastructure.config_loader import ConfigLoader
+from app.infrastructure.exporters import RunExporter
 from app.schemas.simulation import (
     MetricsSnapshotResponse,
     SimulationCreateRequest,
+    ExportRunResponse,
     SimulationMetricsResponse,
     SimulationStateResponse,
     SimulationSnapshotResponse,
@@ -18,8 +20,9 @@ from app.simulation.engine import SimulationEngine
 class SimulationService:
     """Create and manage deterministic engines in process memory."""
 
-    def __init__(self, loader: ConfigLoader) -> None:
+    def __init__(self, loader: ConfigLoader, exporter: RunExporter) -> None:
         self.loader = loader
+        self.exporter = exporter
         self._engines: dict[str, SimulationEngine] = {}
 
     def create(self, request: SimulationCreateRequest) -> SimulationStateResponse:
@@ -28,8 +31,7 @@ class SimulationService:
         scenario = self.loader.load_scenario(request.scenario_config)
         disease_config = self.loader.load_disease(request.disease_config)
         population = self.loader.load_population(request.population_config)
-        if request.policy_config:
-            self.loader.load_policy(request.policy_config)
+        policy_config = self.loader.load_policy(request.policy_config) if request.policy_config else None
 
         simulation_id = str(uuid4())
         try:
@@ -40,6 +42,14 @@ class SimulationService:
                 population_config=population,
                 outbreak=scenario.initial_outbreak,
                 seed=request.seed,
+                policy=self.loader.to_policy(policy_config) if policy_config else None,
+                config_summary={
+                    "scenario_config": request.scenario_config,
+                    "disease_config": request.disease_config,
+                    "population_config": request.population_config,
+                    "policy_config": request.policy_config,
+                    "seed": request.seed,
+                },
             )
         except ValueError as error:
             raise ConfigValidationError(str(error)) from error
@@ -73,6 +83,12 @@ class SimulationService:
             simulation_id=simulation_id,
             history=[MetricsSnapshotResponse.model_validate(asdict(item)) for item in engine.state.metrics_history],
         )
+
+    def export(self, simulation_id: str) -> ExportRunResponse:
+        """Persist a deterministic local bundle for an in-memory simulation."""
+
+        engine = self._get_engine(simulation_id)
+        return ExportRunResponse.model_validate(self.exporter.export(engine.state))
 
     def _get_engine(self, simulation_id: str) -> SimulationEngine:
         try:

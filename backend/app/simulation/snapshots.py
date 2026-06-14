@@ -3,6 +3,7 @@
 from dataclasses import asdict
 
 from app.domain.simulation import SimulationSnapshot, SimulationState
+from app.domain.time import SimulationTime
 from app.simulation.metrics import MetricsEngine
 
 
@@ -16,13 +17,18 @@ class SnapshotBuilder:
         """Create a compact deterministic projection of current state."""
 
         metrics = state.metrics_history[-1]
+        simulation_time = SimulationTime.from_tick(state.tick, state.disease.tick_minutes)
         zone_summary = self.metrics_engine.create_zone_snapshots(state.agents, state.world)
+        contact_summary = [record for record in state.contact_history if record.tick == state.tick]
         sample = [
             {
                 "id": agent.id,
                 "zone_id": agent.zone_id,
                 "state": agent.state.value,
                 "profile": agent.profile,
+                "routine_type": agent.routine_type.value,
+                "home_zone_id": agent.home_zone_id,
+                "intended_destination": agent.current_intended_destination,
             }
             for agent in state.agents[:120]
         ]
@@ -38,8 +44,11 @@ class SnapshotBuilder:
             simulation_id=state.simulation_id,
             tick=state.tick,
             day=round(state.tick * state.disease.tick_minutes / 1440, 4),
+            time=simulation_time,
             agents_summary=agents_summary,
             zone_summary=zone_summary,
+            contact_summary=contact_summary,
+            active_policies=state.active_policy_ids,
             metrics=metrics,
             sample_agents_for_visualization=sample,
         )

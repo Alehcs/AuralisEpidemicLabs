@@ -1,6 +1,8 @@
 import { apiGet, apiPost } from "./client";
 import type {
   SimulationCreateRequest,
+  ExperimentResultResponse,
+  ExportRunResponse,
   SimulationMetricsResponse,
   SimulationStateResponse,
 } from "../types/simulation";
@@ -26,4 +28,14 @@ export function getSimulationMetrics(
   simulationId: string,
 ): Promise<SimulationMetricsResponse> {
   return apiGet<SimulationMetricsResponse>(`/simulations/${simulationId}/metrics`);
+}
+
+export function exportSimulation(simulationId: string): Promise<ExportRunResponse> {
+  return apiPost<ExportRunResponse>(`/simulations/${simulationId}/export`);
+}
+
+export function runBatchExperiment(): Promise<ExperimentResultResponse> {
+  return apiPost<ExperimentResultResponse>("/experiments/run", {
+    experiment_config: "global_vs_local_alert",
+  });
 }

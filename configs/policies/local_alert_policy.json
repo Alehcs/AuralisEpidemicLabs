@@ -2,6 +2,11 @@
   "id": "local_alert_policy",
   "name": "Local Alert Policy",
   "scope": "local",
+  "policy_type": "local_alert",
+  "intensity": 0.7,
+  "start_tick": 24,
+  "end_tick": 240,
+  "target_zone_id": "market",
   "trigger": {
     "metric": "infectious_ratio",
     "threshold": 0.02,

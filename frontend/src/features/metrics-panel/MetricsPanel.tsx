@@ -8,8 +8,13 @@ interface MetricsPanelProps {
 
 export function MetricsPanel({ snapshot }: MetricsPanelProps) {
   const metrics = snapshot?.metrics;
+  const time = snapshot?.time;
+  const clock = time
+    ? `D${time.day} ${String(time.hour).padStart(2, "0")}:${String(time.minute).padStart(2, "0")}`
+    : "--";
   const values = [
-    ["Tick / day", snapshot ? `${snapshot.tick} / ${snapshot.day.toFixed(2)}` : "--"],
+    ["Simulation time", clock],
+    ["Period", time?.time_of_day_label.replaceAll("_", " ") ?? "--"],
     ["Susceptible", metrics ? formatStep(metrics.susceptible_count) : "--"],
     ["Exposed", metrics ? formatStep(metrics.exposed_count) : "--"],
     ["Infected", metrics ? formatStep(metrics.infected_asymptomatic_count + metrics.infected_symptomatic_count) : "--"],

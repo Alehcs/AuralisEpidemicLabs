@@ -9,6 +9,8 @@ interface SimulationControlsProps {
   onStep: () => void;
   onRun: (ticks: number) => void;
   onReset: () => void;
+  onExport: () => void;
+  onRunExperiment: () => void;
 }
 
 export function SimulationControls({
@@ -18,6 +20,8 @@ export function SimulationControls({
   onStep,
   onRun,
   onReset,
+  onExport,
+  onRunExperiment,
 }: SimulationControlsProps) {
   const [runTicks, setRunTicks] = useState(24);
 
@@ -64,10 +68,16 @@ export function SimulationControls({
           <button type="button" className="button-danger" disabled={busy || !hasSimulation} onClick={onReset}>
             Reset
           </button>
+          <button type="button" className="button-secondary" disabled={busy || !hasSimulation} onClick={onExport}>
+            Export current run
+          </button>
+          <button type="button" className="button-secondary" disabled={busy} onClick={onRunExperiment}>
+            Run batch experiment
+          </button>
         </div>
       </div>
       <p className="panel-note">
-        {busy ? "Advancing deterministic simulation…" : "Seed 42 · 60-minute ticks · in-memory run"}
+        {busy ? "Running deterministic operation…" : "Seed 42 · 60-minute ticks · local exports"}
       </p>
     </Panel>
   );

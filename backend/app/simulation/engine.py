@@ -1,14 +1,19 @@
-"""Deterministic orchestration for one agent-based simulation run."""
+"""Deterministic orchestration for one schedule-based simulation run."""
 
 import random
 from dataclasses import dataclass, field
+from typing import Any
 
-from app.domain.simulation import SimulationSnapshot, SimulationState
-from app.domain.world import World
 from app.domain.disease import DiseaseProfile
+from app.domain.policy import Policy
+from app.domain.simulation import SimulationSnapshot, SimulationState
+from app.domain.time import SimulationTime
+from app.domain.world import World
 from app.schemas.configs import AgentPopulationConfig, InitialOutbreakConfig
+from app.simulation.contacts import ContactEngine
 from app.simulation.metrics import MetricsEngine
 from app.simulation.mobility import MobilityEngine
+from app.simulation.policies import PolicyHookEngine
 from app.simulation.population import PopulationGenerator
 from app.simulation.snapshots import SnapshotBuilder
 from app.simulation.transmission import TransmissionEngine
@@ -16,12 +21,14 @@ from app.simulation.transmission import TransmissionEngine
 
 @dataclass(slots=True)
 class SimulationEngine:
-    """Own mutable state and execute ordered movement and disease phases."""
+    """Own mutable state and execute the deterministic Phase 2 tick pipeline."""
 
     state: SimulationState
     rng: random.Random
     mobility_engine: MobilityEngine = field(default_factory=MobilityEngine)
+    contact_engine: ContactEngine = field(default_factory=ContactEngine)
     transmission_engine: TransmissionEngine = field(default_factory=TransmissionEngine)
+    policy_engine: PolicyHookEngine = field(default_factory=PolicyHookEngine)
     metrics_engine: MetricsEngine = field(default_factory=MetricsEngine)
     snapshot_builder: SnapshotBuilder = field(default_factory=SnapshotBuilder)
 
@@ -34,9 +41,9 @@ class SimulationEngine:
         population_config: AgentPopulationConfig,
         outbreak: InitialOutbreakConfig,
         seed: int,
+        policy: Policy | None = None,
+        config_summary: dict[str, Any] | None = None,
     ) -> "SimulationEngine":
-        """Create a reproducible simulation aggregate from domain inputs."""
-
         agents = PopulationGenerator().generate(
             config=population_config,
             world=world,
@@ -53,6 +60,8 @@ class SimulationEngine:
             disease=disease,
             agents=agents,
             cumulative_infections=cumulative,
+            config_summary=config_summary or {},
+            policy=policy,
         )
         engine = cls(state=state, rng=random.Random(seed))
         state.metrics_history.append(
@@ -63,6 +72,8 @@ class SimulationEngine:
                 cumulative_infections=cumulative,
             )
         )
+        initial_snapshot = engine.snapshot()
+        state.snapshots_history.append(engine.snapshot_builder.as_dict(initial_snapshot))
         return engine
 
     @property
@@ -71,22 +82,49 @@ class SimulationEngine:
 
     @property
     def current_step(self) -> int:
-        """Backward-compatible alias for the current tick."""
-
         return self.state.tick
 
     def step(self) -> SimulationSnapshot:
-        """Advance movement, progression, transmission, and metrics one tick."""
+        """Advance schedule, contacts, transmission, metrics, and snapshot once."""
 
         self.state.tick += 1
-        self.mobility_engine.step(self.state.agents, self.state.world, self.rng)
-        new_infections = self.transmission_engine.step(
-            agents=self.state.agents,
-            world=self.state.world,
-            disease=self.state.disease,
-            tick=self.state.tick,
-            rng=self.rng,
+        simulation_time = SimulationTime.from_tick(
+            self.state.tick,
+            self.state.disease.tick_minutes,
         )
+        self.policy_engine.before_mobility(self.state)
+        self.mobility_engine.step(
+            self.state.agents,
+            self.state.world,
+            simulation_time,
+            self.rng,
+        )
+        self.transmission_engine.progress(
+            self.state.agents,
+            self.state.disease,
+            self.state.tick,
+            self.rng,
+        )
+        self.policy_engine.before_contacts(self.state)
+        contact_batch = self.contact_engine.step(
+            self.state.agents,
+            self.state.world,
+            self.state.tick,
+            self.state.disease.tick_minutes,
+        )
+        self.policy_engine.before_transmission(self.state)
+        infections_by_zone = self.transmission_engine.transmit(
+            contact_batch,
+            self.state.world,
+            self.state.disease,
+            self.state.tick,
+            self.rng,
+        )
+        for record in contact_batch.records:
+            record.new_infections = infections_by_zone.get(record.zone_id, 0)
+        self.state.contact_history.extend(contact_batch.records)
+
+        new_infections = sum(infections_by_zone.values())
         self.state.new_infections = new_infections
         self.state.cumulative_infections += new_infections
         self.state.metrics_history.append(
@@ -97,11 +135,12 @@ class SimulationEngine:
                 cumulative_infections=self.state.cumulative_infections,
             )
         )
-        return self.snapshot()
+        self.policy_engine.after_metrics(self.state)
+        snapshot = self.snapshot()
+        self.state.snapshots_history.append(self.snapshot_builder.as_dict(snapshot))
+        return snapshot
 
     def run(self, ticks: int) -> SimulationSnapshot:
-        """Advance a positive number of ticks for interactive or batch use."""
-
         if ticks <= 0:
             raise ValueError("ticks must be greater than zero")
         for _ in range(ticks):
@@ -109,11 +148,7 @@ class SimulationEngine:
         return self.snapshot()
 
     def snapshot(self) -> SimulationSnapshot:
-        """Return the current compact visualization projection."""
-
         return self.snapshot_builder.create_snapshot(self.state)
 
     def create_snapshot(self) -> dict[str, object]:
-        """Backward-compatible JSON projection used by existing callers."""
-
         return self.snapshot_builder.as_dict(self.snapshot())

@@ -9,5 +9,14 @@
     {"profile": "skeptics", "proportion": 0.17},
     {"profile": "obedient", "proportion": 0.28},
     {"profile": "griefers", "proportion": 0.05}
+  ],
+  "routines": [
+    {"routine_type": "worker", "proportion": 0.34},
+    {"routine_type": "student", "proportion": 0.18},
+    {"routine_type": "remote", "proportion": 0.10},
+    {"routine_type": "elderly", "proportion": 0.12},
+    {"routine_type": "trader", "proportion": 0.08},
+    {"routine_type": "healthcare", "proportion": 0.06},
+    {"routine_type": "unemployed", "proportion": 0.12}
   ]
 }

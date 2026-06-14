@@ -3,9 +3,18 @@
 from dataclasses import asdict
 
 
-def population_signature(engine) -> list[tuple[str, str, str, str]]:
+def population_signature(engine) -> list[tuple[object, ...]]:
     return [
-        (agent.id, agent.profile, agent.zone_id, agent.state.value)
+        (
+            agent.id,
+            agent.profile,
+            agent.zone_id,
+            agent.state.value,
+            agent.home_zone_id,
+            agent.work_zone_id,
+            agent.school_zone_id,
+            agent.routine_type.value,
+        )
         for agent in engine.state.agents
     ]
 

@@ -15,3 +15,11 @@ class ConfigValidationError(AuralisError):
 
 class SimulationNotFoundError(AuralisError):
     """Raised when an in-memory simulation identifier is unknown."""
+
+
+class RunNotFoundError(AuralisError):
+    """Raised when an exported run cannot be found."""
+
+
+class ExperimentNotFoundError(AuralisError):
+    """Raised when experiment results are not available."""

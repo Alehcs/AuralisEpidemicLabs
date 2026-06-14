@@ -17,10 +17,15 @@ def config_loader() -> ConfigLoader:
 
 @pytest.fixture
 def engine_factory(config_loader: ConfigLoader):
-    def create(seed: int = 42, simulation_id: str = "test-simulation") -> SimulationEngine:
+    def create(
+        seed: int = 42,
+        simulation_id: str = "test-simulation",
+        with_policy: bool = True,
+    ) -> SimulationEngine:
         scenario = config_loader.load_scenario("district_v1_market_outbreak")
         disease = config_loader.load_disease("respiratory_like_v1")
         population = config_loader.load_population("default_population_v1")
+        policy_config = config_loader.load_policy("local_alert_policy")
         return SimulationEngine.create(
             simulation_id=simulation_id,
             world=config_loader.to_world(scenario),
@@ -28,6 +33,8 @@ def engine_factory(config_loader: ConfigLoader):
             population_config=population,
             outbreak=scenario.initial_outbreak,
             seed=seed,
+            policy=config_loader.to_policy(policy_config) if with_policy else None,
+            config_summary={"seed": seed},
         )
 
     return create

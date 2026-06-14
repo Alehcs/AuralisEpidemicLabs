@@ -26,10 +26,12 @@ def test_create_step_run_state_and_metrics_flow() -> None:
             assert created.status_code == 201
             simulation_id = created.json()["simulation_id"]
             assert created.json()["snapshot"]["tick"] == 0
+            assert created.json()["snapshot"]["time"]["time_of_day_label"] == "night"
 
             stepped = await client.post(f"/simulations/{simulation_id}/step")
             assert stepped.status_code == 200
             assert stepped.json()["snapshot"]["tick"] == 1
+            assert stepped.json()["snapshot"]["contact_summary"]
 
             ran = await client.post(
                 f"/simulations/{simulation_id}/run",

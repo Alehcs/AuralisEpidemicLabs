@@ -49,14 +49,39 @@ class SampleAgentResponse(BaseModel):
     zone_id: str
     state: str
     profile: str
+    routine_type: str
+    home_zone_id: str
+    intended_destination: str | None
+
+
+class SimulationTimeResponse(BaseModel):
+    tick: int
+    tick_minutes: int
+    day: int
+    hour: int = Field(ge=0, le=23)
+    minute: int = Field(ge=0, le=59)
+    time_of_day_label: str
+
+
+class ContactRecordResponse(BaseModel):
+    tick: int
+    zone_id: str
+    contact_count: int
+    susceptible_exposed_contacts: int
+    infectious_contacts: int
+    new_infections: int
+    average_zone_density: float
 
 
 class SimulationSnapshotResponse(BaseModel):
     simulation_id: str
     tick: int = Field(ge=0)
     day: float = Field(ge=0)
+    time: SimulationTimeResponse
     agents_summary: dict[str, int]
     zone_summary: list[ZoneSummaryResponse]
+    contact_summary: list[ContactRecordResponse]
+    active_policies: list[str]
     metrics: MetricsSnapshotResponse
     sample_agents_for_visualization: list[SampleAgentResponse]
 
@@ -76,3 +101,21 @@ class SimulationMetricsResponse(BaseModel):
 
     simulation_id: str
     history: list[MetricsSnapshotResponse]
+
+
+class ExportRunResponse(BaseModel):
+    run_id: str
+    directory: str
+    files: list[str]
+
+
+class RunSummaryResponse(BaseModel):
+    run_id: str
+    simulation_id: str
+    tick: int
+    exported_at: str
+
+
+class ReplaySnapshotsResponse(BaseModel):
+    run_id: str
+    snapshots: list[dict[str, Any]]

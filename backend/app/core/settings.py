@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     api_port: int = 8000
     log_level: str = "INFO"
     config_directory: Path = Path(__file__).resolve().parents[3] / "configs"
+    output_directory: Path = Path(__file__).resolve().parents[3] / "outputs"
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
     model_config = SettingsConfigDict(

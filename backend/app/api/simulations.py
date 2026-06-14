@@ -5,7 +5,9 @@ from fastapi import APIRouter
 from app.application.simulation_service import SimulationService
 from app.core.settings import get_settings
 from app.infrastructure.config_loader import ConfigLoader
+from app.infrastructure.exporters import RunExporter
 from app.schemas.simulation import (
+    ExportRunResponse,
     SimulationCreateRequest,
     SimulationMetricsResponse,
     SimulationRunRequest,
@@ -13,7 +15,11 @@ from app.schemas.simulation import (
 )
 
 router = APIRouter(prefix="/simulations", tags=["simulations"])
-service = SimulationService(ConfigLoader(get_settings().config_directory))
+settings = get_settings()
+service = SimulationService(
+    ConfigLoader(settings.config_directory),
+    RunExporter(settings.output_directory),
+)
 
 
 @router.post("/create", response_model=SimulationStateResponse, status_code=201)
@@ -52,3 +58,10 @@ def simulation_metrics(simulation_id: str) -> SimulationMetricsResponse:
     """Read metric history accumulated by a simulation."""
 
     return service.metrics(simulation_id)
+
+
+@router.post("/{simulation_id}/export", response_model=ExportRunResponse)
+def export_simulation(simulation_id: str) -> ExportRunResponse:
+    """Export metadata, metrics, compact snapshots, and final summary."""
+
+    return service.export(simulation_id)

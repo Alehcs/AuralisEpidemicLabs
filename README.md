@@ -4,9 +4,12 @@ Auralis Epidemic Labs is a socio-cognitive, agent-based simulation workspace
 for studying synthetic epidemic outbreaks, information exposure, risk
 perception, trust, fatigue, mobility, and policy response.
 
-This repository currently contains **Phase 1: a minimal deterministic ABM
-simulation core**. It implements a synthetic SEIR-style model, not a calibrated
-real-world disease model.
+This repository currently contains **Phase 2: scheduled mobility, aggregate
+contact records, local export/replay, and deterministic batch experiments**. It
+implements a synthetic SEIR-style model, not a calibrated real-world disease.
+
+For the current implementation status, decisions, contracts, and next-step
+context, read [`context.md`](context.md) before starting new work.
 
 ## Stack
 
@@ -92,7 +95,7 @@ claim. Generated runtime data should be written beneath `outputs/`.
 
 ## Optional Docker Support
 
-Docker is not required for Phase 1. `docker-compose.yml` contains only an
+Docker is not required for Phase 2. `docker-compose.yml` contains only an
 opt-in PostgreSQL service reserved for later persistence work:
 
 ```bash
@@ -101,29 +104,33 @@ docker compose --profile future-db up -d postgres
 
 The backend intentionally has no PostgreSQL driver or database dependency yet.
 
-## Phase 1 Capabilities
+## Phase 2 Capabilities
 
 Implemented now:
 
 - Validated scenario, disease, population, policy, and experiment configs
 - Deterministic seeded population generation and initial outbreak placement
-- Zone routes, probabilistic movement, and aggregate local contacts
+- Stable home/work/school assignments and routine types
+- Time-of-day labels and schedule-based route movement
+- Per-zone aggregate contact records retained by tick
 - Susceptible, exposed, asymptomatic, symptomatic, recovered, and isolated states
 - Functional create, step, run, state, and metrics endpoints
+- Scheduled policy lifecycle hooks with intentionally neutral effects
+- Local run export and compact snapshot replay endpoints
+- First deterministic headless experiment comparison runner
 - Per-tick and per-zone metrics plus compact visualization snapshots
-- React controls, zone cards, S/E/I/R metrics, and epidemic history
+- React controls, simulation clock, contacts, export, and experiment summary
 
 Deliberately deferred:
 
 - Socio-cognitive updates, rumor diffusion, memory, and trust networks
-- Calibrated epidemiology, demographics, routines, and contact networks
+- Calibrated epidemiology, demographics, and pair-level contact networks
 - Real map geometry and advanced charts or animation
-- Durable run storage, PostgreSQL repositories, authentication, workers
-- Policy effects, experiment execution, replay, and analysis exports
+- PostgreSQL repositories, authentication, workers, and durable job execution
+- Real policy effects, advanced replay UI, and richer analysis exports
 
-## Suggested Phase 2 / Prompt 3
+## Suggested Phase 3 / Prompt 4
 
-Add stable home/work schedules and time-of-day movement, explicit contact event
-sampling, policy activation hooks, snapshot export/replay, and a first batch
-experiment runner. Keep socio-cognitive behavior behind its existing interface
-until epidemiological runs and experiment outputs are reproducible.
+Implement the first real policy effects and isolation workflow, add richer
+experiment comparison/export, and introduce the minimal information exposure
+event model while preserving deterministic physical simulation behavior.
