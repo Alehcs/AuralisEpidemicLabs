@@ -8,12 +8,14 @@ from app.infrastructure.config_loader import ConfigLoader
 from app.infrastructure.exporters import RunExporter
 from app.schemas.simulation import (
     MetricsSnapshotResponse,
+    SimulationBehaviorResponse,
     SimulationCognitionResponse,
     SimulationCreateRequest,
     ExportRunResponse,
     SimulationInformationResponse,
     SimulationMetricsResponse,
     SimulationPoliciesResponse,
+    SimulationSocialResponse,
     SimulationStateResponse,
     SimulationSnapshotResponse,
 )
@@ -192,6 +194,51 @@ class SimulationService:
                     "anti_authority_exposure_count": metrics.anti_authority_exposure_count,
                 },
                 "effect_summary": state.information_effect_summary,
+            }
+        )
+
+    def behavior(self, simulation_id: str) -> SimulationBehaviorResponse:
+        """Return behavior aggregates and a bounded agent sample."""
+
+        engine = self._get_engine(simulation_id)
+        metrics = engine.state.metrics_history[-1]
+        snapshot = engine.snapshot()
+        return SimulationBehaviorResponse.model_validate(
+            {
+                "simulation_id": simulation_id,
+                "tick": engine.state.tick,
+                "metrics": {
+                    "mean_protection_behavior": metrics.mean_protection_behavior,
+                    "mean_distancing_behavior": metrics.mean_distancing_behavior,
+                    "mean_risk_compensation": metrics.mean_risk_compensation,
+                    "mean_risky_optional_movement_bias": metrics.mean_risky_optional_movement_bias,
+                    "raw_contact_count": metrics.raw_contact_count,
+                    "effective_contact_count": metrics.effective_contact_count,
+                    "effective_beta_mean": metrics.effective_beta_mean,
+                    "behavioral_transmission_reduction": metrics.behavioral_transmission_reduction,
+                    "misinformation_transmission_amplification": (
+                        metrics.misinformation_transmission_amplification
+                    ),
+                },
+                "sample_agents": snapshot.sample_agents_for_visualization,
+            }
+        )
+
+    def social(self, simulation_id: str) -> SimulationSocialResponse:
+        """Return district-wide and per-zone social-influence pressures."""
+
+        engine = self._get_engine(simulation_id)
+        state = engine.state
+        metrics = state.metrics_history[-1]
+        return SimulationSocialResponse.model_validate(
+            {
+                "simulation_id": simulation_id,
+                "tick": state.tick,
+                "mean_rumor_pressure": state.rumor_pressure,
+                "mean_peer_warning_pressure": state.peer_warning_pressure,
+                "mean_peer_rumor_exposure": metrics.mean_peer_rumor_exposure,
+                "mean_peer_warning_exposure": metrics.mean_peer_warning_exposure,
+                "zone_pressures": state.zone_social_pressures,
             }
         )
 

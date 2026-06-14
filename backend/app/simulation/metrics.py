@@ -23,6 +23,13 @@ class MetricsEngine:
         contact_count: int = 0,
         movement_reduction_estimate: float = 0.0,
         contact_reduction_estimate: float = 0.0,
+        raw_contact_count: int = 0,
+        effective_contact_count: int = 0,
+        effective_beta_mean: float = 0.0,
+        behavioral_transmission_reduction: float = 0.0,
+        misinformation_transmission_amplification: float = 0.0,
+        rumor_pressure: float = 0.0,
+        peer_warning_pressure: float = 0.0,
         policy_effect_summary: dict[str, object] | None = None,
     ) -> MetricsSnapshot:
         """Count agents by state and derive active infection totals."""
@@ -78,6 +85,33 @@ class MetricsEngine:
             anti_authority_exposure_count=sum(
                 1 for agent in agents if agent.anti_authority_exposure > 0.01
             ),
+            mean_protection_behavior=round(
+                fmean(agent.protection_behavior for agent in agents), 6
+            ),
+            mean_distancing_behavior=round(
+                fmean(agent.distancing_behavior for agent in agents), 6
+            ),
+            mean_risk_compensation=round(
+                fmean(agent.risk_compensation for agent in agents), 6
+            ),
+            mean_risky_optional_movement_bias=round(
+                fmean(agent.risky_optional_movement_bias for agent in agents), 6
+            ),
+            mean_peer_rumor_exposure=round(
+                fmean(agent.peer_rumor_exposure for agent in agents), 6
+            ),
+            mean_peer_warning_exposure=round(
+                fmean(agent.peer_warning_exposure for agent in agents), 6
+            ),
+            raw_contact_count=raw_contact_count,
+            effective_contact_count=effective_contact_count,
+            effective_beta_mean=round(effective_beta_mean, 6),
+            behavioral_transmission_reduction=round(behavioral_transmission_reduction, 6),
+            misinformation_transmission_amplification=round(
+                misinformation_transmission_amplification, 6
+            ),
+            rumor_pressure=round(rumor_pressure, 6),
+            peer_warning_pressure=round(peer_warning_pressure, 6),
             policy_effect_summary=policy_effect_summary or {},
         )
 

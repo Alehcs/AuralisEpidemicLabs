@@ -120,15 +120,16 @@ class MobilityEngine:
 
     @staticmethod
     def _social_drive(agent: Agent) -> float:
-        """Cognitive multiplier on optional/social trips.
+        """Behavior multiplier on optional/social trips only.
 
-        Perceived risk suppresses voluntary outings, while accumulated fatigue and
-        curiosity push agents back out after prolonged restrictions. Bounded so it
-        only modulates (never inverts) the baseline schedule probabilities.
+        Distancing behavior suppresses voluntary outings; the risky optional
+        movement bias (curiosity, fatigue-driven restriction breaking, believed
+        safety) pushes agents back out. Mandatory work/school movement does not
+        use this multiplier, so essential trips stay comparatively stable.
         """
 
-        drive = (1.0 - 0.6 * agent.perceived_risk) * (
-            1.0 + 0.5 * agent.fatigue * (0.5 + agent.curiosity)
+        drive = (1.0 - 0.6 * agent.distancing_behavior) * (
+            1.0 + 0.6 * agent.risky_optional_movement_bias
         )
         return max(0.0, min(1.6, drive))
 

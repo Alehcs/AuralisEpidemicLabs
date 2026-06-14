@@ -31,6 +31,19 @@ export interface MetricsSnapshot {
   official_alert_exposure_count: number;
   false_safety_exposure_count: number;
   anti_authority_exposure_count: number;
+  mean_protection_behavior: number;
+  mean_distancing_behavior: number;
+  mean_risk_compensation: number;
+  mean_risky_optional_movement_bias: number;
+  mean_peer_rumor_exposure: number;
+  mean_peer_warning_exposure: number;
+  raw_contact_count: number;
+  effective_contact_count: number;
+  effective_beta_mean: number;
+  behavioral_transmission_reduction: number;
+  misinformation_transmission_amplification: number;
+  rumor_pressure: number;
+  peer_warning_pressure: number;
   policy_effect_summary: Record<string, unknown>;
 }
 
@@ -97,6 +110,11 @@ export interface SampleAgent {
   adaptive_compliance: number;
   trust_authority: number;
   fatigue: number;
+  protection_behavior: number;
+  distancing_behavior: number;
+  risk_compensation: number;
+  peer_rumor_exposure: number;
+  peer_warning_exposure: number;
 }
 
 export interface SimulationStateResponse {
@@ -147,6 +165,13 @@ export interface ExperimentRunMetric {
   mean_fatigue: number;
   mean_compliance: number;
   mean_rumor_exposure: number;
+  mean_protection_behavior: number;
+  mean_distancing_behavior: number;
+  mean_risk_compensation: number;
+  effective_contact_count: number;
+  effective_beta_mean: number;
+  behavioral_transmission_reduction: number;
+  misinformation_transmission_amplification: number;
 }
 
 export interface VariantResult {

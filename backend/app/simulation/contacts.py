@@ -18,13 +18,26 @@ class ZoneContactContext:
     infectious_pressure: float
 
 
+# Strength of behavior on effective contacts (Phase 5). Distancing thins
+# mixing; risk compensation (false safety / fatigue) re-thickens it.
+_DISTANCING_STRENGTH = 0.5
+_RISK_COMPENSATION_STRENGTH = 0.5
+
+
 @dataclass(slots=True)
 class ContactBatch:
-    """Contexts used for transmission and compact records retained for replay."""
+    """Contexts used for transmission and compact records retained for replay.
+
+    ``raw_contact_count`` is pre-intervention mixing, ``policy_contact_count``
+    applies only scheduled policy reductions, and ``effective_contact_count``
+    additionally folds in emergent agent behavior (distancing vs risk
+    compensation).
+    """
 
     contexts: dict[str, ZoneContactContext]
     records: list[ContactRecord]
-    baseline_contact_count: int = 0
+    raw_contact_count: int = 0
+    policy_contact_count: int = 0
     effective_contact_count: int = 0
 
 
@@ -46,7 +59,8 @@ class ContactEngine:
 
         contexts: dict[str, ZoneContactContext] = {}
         records: list[ContactRecord] = []
-        baseline_total = 0
+        raw_total = 0
+        policy_total = 0
         effective_total = 0
         tick_fraction = tick_minutes / 1440
         for zone_id, local_agents in grouped.items():
@@ -61,14 +75,18 @@ class ContactEngine:
             density = population / zone.capacity
             baseline_contacts = round(population * zone.contact_rate * tick_fraction / 2)
             contact_multiplier = modifiers.contact_multiplier(zone_id)
-            contact_count = round(baseline_contacts * contact_multiplier)
-            baseline_total += baseline_contacts
+            behavior_multiplier = self._behavior_multiplier(local_agents)
+            effective_multiplier = contact_multiplier * behavior_multiplier
+            policy_contacts = round(baseline_contacts * contact_multiplier)
+            contact_count = round(baseline_contacts * effective_multiplier)
+            raw_total += baseline_contacts
+            policy_total += policy_contacts
             effective_total += contact_count
             infectious_prevalence = infectious_pressure / population
             susceptible_exposed = round(
                 counts["susceptible"]
                 * zone.contact_rate
-                * contact_multiplier
+                * effective_multiplier
                 * tick_fraction
                 * infectious_prevalence
             )
@@ -91,6 +109,21 @@ class ContactEngine:
         return ContactBatch(
             contexts=contexts,
             records=records,
-            baseline_contact_count=baseline_total,
+            raw_contact_count=raw_total,
+            policy_contact_count=policy_total,
             effective_contact_count=effective_total,
         )
+
+    @staticmethod
+    def _behavior_multiplier(local_agents: list[Agent]) -> float:
+        """Mean distancing thins contacts; mean risk compensation re-thickens."""
+
+        population = len(local_agents)
+        if not population:
+            return 1.0
+        mean_distancing = sum(agent.distancing_behavior for agent in local_agents) / population
+        mean_risk_comp = sum(agent.risk_compensation for agent in local_agents) / population
+        multiplier = (1 - mean_distancing * _DISTANCING_STRENGTH) * (
+            1 + mean_risk_comp * _RISK_COMPENSATION_STRENGTH
+        )
+        return max(0.05, multiplier)

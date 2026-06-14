@@ -49,6 +49,19 @@ export function MetricsPanel({ snapshot }: MetricsPanelProps) {
     ["Rumor exposed", metrics ? formatStep(metrics.rumor_exposure_count) : "--"],
     ["False-safety exposed", metrics ? formatStep(metrics.false_safety_exposure_count) : "--"],
     ["Anti-authority exposed", metrics ? formatStep(metrics.anti_authority_exposure_count) : "--"],
+    ["Peer rumor exposure", pct(metrics?.mean_peer_rumor_exposure)],
+    ["Peer warning exposure", pct(metrics?.mean_peer_warning_exposure)],
+  ];
+  const behavior: Array<[string, string]> = [
+    ["Protection behavior", pct(metrics?.mean_protection_behavior)],
+    ["Distancing behavior", pct(metrics?.mean_distancing_behavior)],
+    ["Risk compensation", pct(metrics?.mean_risk_compensation)],
+    ["Risky movement bias", pct(metrics?.mean_risky_optional_movement_bias)],
+    ["Raw contacts", metrics ? formatStep(metrics.raw_contact_count) : "--"],
+    ["Effective contacts", metrics ? formatStep(metrics.effective_contact_count) : "--"],
+    ["Effective β", metrics ? metrics.effective_beta_mean.toFixed(4) : "--"],
+    ["Behavioral transmission ↓", pct(metrics?.behavioral_transmission_reduction)],
+    ["Misinformation β ↑", metrics ? `${(metrics.misinformation_transmission_amplification * 100).toFixed(1)}%` : "--"],
   ];
 
   return (
@@ -73,6 +86,15 @@ export function MetricsPanel({ snapshot }: MetricsPanelProps) {
       <p className="metric-group-label">Information exposure</p>
       <div className="metric-grid">
         {information.map(([label, value]) => (
+          <div className="metric" key={label}>
+            <span>{label}</span>
+            <strong>{value}</strong>
+          </div>
+        ))}
+      </div>
+      <p className="metric-group-label">Behavior &amp; transmission</p>
+      <div className="metric-grid">
+        {behavior.map(([label, value]) => (
           <div className="metric" key={label}>
             <span>{label}</span>
             <strong>{value}</strong>

@@ -94,6 +94,7 @@ export function App() {
   }, []);
   const handleRunExperiment = () => runExperiment("global_vs_local_alert");
   const handleRunRumorExperiment = () => runExperiment("official_alert_vs_rumors");
+  const handleRunMisinformationExperiment = () => runExperiment("misinformation_epidemic_impact");
 
   return (
     <div className="app-shell">
@@ -117,6 +118,7 @@ export function App() {
             onExport={handleExport}
             onRunExperiment={handleRunExperiment}
             onRunRumorExperiment={handleRunRumorExperiment}
+            onRunMisinformationExperiment={handleRunMisinformationExperiment}
           />
           <MetricsPanel snapshot={snapshot} />
         </div>
@@ -127,7 +129,7 @@ export function App() {
           <ExperimentResults result={experimentResult} />
         </div>
       </main>
-      <footer>Phase 4 · Adaptive cognition, trust, fatigue, memory, and rumor vs official information</footer>
+      <footer>Phase 5 · Behavior-driven transmission feedback and light social rumor propagation</footer>
     </div>
   );
 }

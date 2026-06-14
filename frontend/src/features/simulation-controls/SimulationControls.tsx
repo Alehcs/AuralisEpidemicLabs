@@ -12,6 +12,7 @@ interface SimulationControlsProps {
   onExport: () => void;
   onRunExperiment: () => void;
   onRunRumorExperiment: () => void;
+  onRunMisinformationExperiment: () => void;
 }
 
 export function SimulationControls({
@@ -24,6 +25,7 @@ export function SimulationControls({
   onExport,
   onRunExperiment,
   onRunRumorExperiment,
+  onRunMisinformationExperiment,
 }: SimulationControlsProps) {
   const [runTicks, setRunTicks] = useState(24);
 
@@ -78,6 +80,9 @@ export function SimulationControls({
           </button>
           <button type="button" className="button-secondary" disabled={busy} onClick={onRunRumorExperiment}>
             Run rumor experiment
+          </button>
+          <button type="button" className="button-secondary" disabled={busy} onClick={onRunMisinformationExperiment}>
+            Run misinformation experiment
           </button>
         </div>
       </div>

@@ -41,6 +41,14 @@ class SimulationState:
     agents_under_local_alert: int = 0
     agents_under_global_alert: int = 0
     agents_under_rumor: int = 0
+    raw_contact_count: int = 0
+    effective_contact_count: int = 0
+    effective_beta_mean: float = 0.0
+    behavioral_transmission_reduction: float = 0.0
+    misinformation_transmission_amplification: float = 0.0
+    rumor_pressure: float = 0.0
+    peer_warning_pressure: float = 0.0
+    zone_social_pressures: dict[str, dict[str, float]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)

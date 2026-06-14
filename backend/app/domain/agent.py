@@ -79,6 +79,15 @@ class Agent:
     safety_rumor_exposure: float = 0.0
     danger_rumor_exposure: float = 0.0
     anti_authority_exposure: float = 0.0
+    # --- Phase 5 behavior state (abstract precaution indices, bounded [0, 1]) ---
+    protection_behavior: float = 0.0
+    distancing_behavior: float = 0.0
+    masking_or_precaution_level: float = 0.0
+    risk_compensation: float = 0.0
+    risky_optional_movement_bias: float = 0.0
+    social_influence_exposure: float = 0.0
+    peer_rumor_exposure: float = 0.0
+    peer_warning_exposure: float = 0.0
 
     @property
     def is_infectious(self) -> bool:

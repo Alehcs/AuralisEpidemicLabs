@@ -41,6 +41,20 @@ class MetricsSnapshot:
     official_alert_exposure_count: int = 0
     false_safety_exposure_count: int = 0
     anti_authority_exposure_count: int = 0
+    # --- Phase 5 behavior and transmission-feedback aggregates ---
+    mean_protection_behavior: float = 0.0
+    mean_distancing_behavior: float = 0.0
+    mean_risk_compensation: float = 0.0
+    mean_risky_optional_movement_bias: float = 0.0
+    mean_peer_rumor_exposure: float = 0.0
+    mean_peer_warning_exposure: float = 0.0
+    raw_contact_count: int = 0
+    effective_contact_count: int = 0
+    effective_beta_mean: float = 0.0
+    behavioral_transmission_reduction: float = 0.0
+    misinformation_transmission_amplification: float = 0.0
+    rumor_pressure: float = 0.0
+    peer_warning_pressure: float = 0.0
     policy_effect_summary: dict[str, Any] = field(default_factory=dict)
 
 

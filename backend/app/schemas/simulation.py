@@ -56,6 +56,19 @@ class MetricsSnapshotResponse(BaseModel):
     official_alert_exposure_count: int = Field(default=0, ge=0)
     false_safety_exposure_count: int = Field(default=0, ge=0)
     anti_authority_exposure_count: int = Field(default=0, ge=0)
+    mean_protection_behavior: float = Field(default=0.0, ge=0, le=1)
+    mean_distancing_behavior: float = Field(default=0.0, ge=0, le=1)
+    mean_risk_compensation: float = Field(default=0.0, ge=0, le=1)
+    mean_risky_optional_movement_bias: float = Field(default=0.0, ge=0, le=1)
+    mean_peer_rumor_exposure: float = Field(default=0.0, ge=0, le=1)
+    mean_peer_warning_exposure: float = Field(default=0.0, ge=0, le=1)
+    raw_contact_count: int = Field(default=0, ge=0)
+    effective_contact_count: int = Field(default=0, ge=0)
+    effective_beta_mean: float = Field(default=0.0, ge=0)
+    behavioral_transmission_reduction: float = Field(default=0.0, ge=0, le=1)
+    misinformation_transmission_amplification: float = Field(default=0.0, ge=0)
+    rumor_pressure: float = Field(default=0.0, ge=0, le=1)
+    peer_warning_pressure: float = Field(default=0.0, ge=0, le=1)
     policy_effect_summary: dict[str, Any]
 
 
@@ -90,6 +103,11 @@ class SampleAgentResponse(BaseModel):
     adaptive_compliance: float = Field(default=0.0, ge=0, le=1)
     trust_authority: float = Field(default=0.0, ge=0, le=1)
     fatigue: float = Field(default=0.0, ge=0, le=1)
+    protection_behavior: float = Field(default=0.0, ge=0, le=1)
+    distancing_behavior: float = Field(default=0.0, ge=0, le=1)
+    risk_compensation: float = Field(default=0.0, ge=0, le=1)
+    peer_rumor_exposure: float = Field(default=0.0, ge=0, le=1)
+    peer_warning_exposure: float = Field(default=0.0, ge=0, le=1)
 
 
 class SimulationTimeResponse(BaseModel):
@@ -208,6 +226,41 @@ class SimulationInformationResponse(BaseModel):
     active_information_ids: list[str]
     exposure: dict[str, int]
     effect_summary: dict[str, Any]
+
+
+class BehaviorMetricsResponse(BaseModel):
+    """Aggregate behavior and transmission-feedback measurements."""
+
+    mean_protection_behavior: float
+    mean_distancing_behavior: float
+    mean_risk_compensation: float
+    mean_risky_optional_movement_bias: float
+    raw_contact_count: int
+    effective_contact_count: int
+    effective_beta_mean: float
+    behavioral_transmission_reduction: float
+    misinformation_transmission_amplification: float
+
+
+class SimulationBehaviorResponse(BaseModel):
+    """Behavior aggregates plus a bounded agent sample for inspection."""
+
+    simulation_id: str
+    tick: int
+    metrics: BehaviorMetricsResponse
+    sample_agents: list[SampleAgentResponse]
+
+
+class SimulationSocialResponse(BaseModel):
+    """District and per-zone social-influence pressures."""
+
+    simulation_id: str
+    tick: int
+    mean_rumor_pressure: float
+    mean_peer_warning_pressure: float
+    mean_peer_rumor_exposure: float
+    mean_peer_warning_exposure: float
+    zone_pressures: dict[str, dict[str, float]]
 
 
 class ExportRunResponse(BaseModel):

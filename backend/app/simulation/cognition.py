@@ -126,6 +126,7 @@ class CognitionEngine:
             + 0.15 * agent.memory_recent_infections_nearby
             + 0.12 * believed_danger
             + 0.10 * agent.fear
+            + 0.10 * agent.peer_warning_exposure * agent.trust_peers
             - 0.30 * believed_safety
         )
         # Fatigue dampens responsiveness to all signals (perception numbing).

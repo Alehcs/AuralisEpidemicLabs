@@ -111,6 +111,31 @@ class ExperimentService:
                     "mean_rumor_exposure": round(
                         fmean(item.mean_rumor_exposure for item in history), 6
                     ),
+                    "mean_protection_behavior": round(
+                        fmean(item.mean_protection_behavior for item in history), 6
+                    ),
+                    "mean_distancing_behavior": round(
+                        fmean(item.mean_distancing_behavior for item in history), 6
+                    ),
+                    "mean_risk_compensation": round(
+                        fmean(item.mean_risk_compensation for item in history), 6
+                    ),
+                    "effective_contact_count": round(
+                        fmean(item.effective_contact_count for item in history), 6
+                    ),
+                    "effective_beta_mean": round(
+                        fmean(item.effective_beta_mean for item in history), 6
+                    ),
+                    "behavioral_transmission_reduction": round(
+                        fmean(item.behavioral_transmission_reduction for item in history), 6
+                    ),
+                    "misinformation_transmission_amplification": round(
+                        fmean(
+                            item.misinformation_transmission_amplification
+                            for item in history
+                        ),
+                        6,
+                    ),
                 }
                 run = {"run_id": run_id, "variant_id": variant.id, "seed": seed, "metrics": metrics}
                 runs.append(run)

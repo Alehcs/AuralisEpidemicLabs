@@ -12,6 +12,7 @@ from app.domain.simulation import SimulationSnapshot, SimulationState
 from app.domain.time import SimulationTime
 from app.domain.world import World
 from app.schemas.configs import AgentPopulationConfig, InitialOutbreakConfig
+from app.simulation.behavior import BehaviorEngine
 from app.simulation.cognition import CognitionEngine
 from app.simulation.contacts import ContactEngine
 from app.simulation.information import InformationEngine
@@ -20,6 +21,7 @@ from app.simulation.mobility import MobilityEngine
 from app.simulation.policies import PolicyHookEngine
 from app.simulation.population import PopulationGenerator
 from app.simulation.snapshots import SnapshotBuilder
+from app.simulation.social import SocialInfluenceEngine
 from app.simulation.transmission import TransmissionEngine
 
 
@@ -33,7 +35,9 @@ class SimulationEngine:
     contact_engine: ContactEngine = field(default_factory=ContactEngine)
     transmission_engine: TransmissionEngine = field(default_factory=TransmissionEngine)
     information_engine: InformationEngine = field(default_factory=InformationEngine)
+    social_engine: SocialInfluenceEngine = field(default_factory=SocialInfluenceEngine)
     cognition_engine: CognitionEngine = field(default_factory=CognitionEngine)
+    behavior_engine: BehaviorEngine = field(default_factory=BehaviorEngine)
     policy_engine: PolicyHookEngine = field(default_factory=PolicyHookEngine)
     metrics_engine: MetricsEngine = field(default_factory=MetricsEngine)
     snapshot_builder: SnapshotBuilder = field(default_factory=SnapshotBuilder)
@@ -136,6 +140,14 @@ class SimulationEngine:
             "false_danger_reach": information.false_danger_reach,
             "anti_authority_reach": information.anti_authority_reach,
         }
+        social = self.social_engine.step(
+            self.state.agents,
+            tuple(self.state.world.zones),
+            self.state.tick,
+        )
+        self.state.zone_social_pressures = social.zone_pressures
+        self.state.rumor_pressure = social.mean_rumor_pressure
+        self.state.peer_warning_pressure = social.mean_peer_warning_pressure
         self.transmission_engine.progress(
             self.state.agents,
             self.state.disease,
@@ -149,6 +161,7 @@ class SimulationEngine:
             modifiers,
             self.state.tick,
         )
+        self.behavior_engine.step(self.state.agents, modifiers, self.state.tick)
         movement = self.mobility_engine.step(
             self.state.agents,
             self.state.world,
@@ -167,28 +180,41 @@ class SimulationEngine:
             self.state.disease.tick_minutes,
             modifiers,
         )
+        # Policy-only reduction keeps its Phase 3 meaning; behavior is tracked
+        # separately via raw vs effective contact counts.
         self.state.contact_reduction_estimate = (
-            1 - contact_batch.effective_contact_count / contact_batch.baseline_contact_count
-            if contact_batch.baseline_contact_count
+            1 - contact_batch.policy_contact_count / contact_batch.raw_contact_count
+            if contact_batch.raw_contact_count
             else 0.0
         )
+        self.state.raw_contact_count = contact_batch.raw_contact_count
+        self.state.effective_contact_count = contact_batch.effective_contact_count
         self.state.policy_effect_summary.update(
             {
                 "isolated_this_tick": isolated_this_tick,
                 "movement_attempts": movement.attempted,
                 "movements_prevented": movement.policy_blocked,
-                "baseline_contacts": contact_batch.baseline_contact_count,
+                "raw_contacts": contact_batch.raw_contact_count,
+                "policy_contacts": contact_batch.policy_contact_count,
                 "effective_contacts": contact_batch.effective_contact_count,
             }
         )
         self.policy_engine.before_transmission(self.state)
-        infections_by_zone = self.transmission_engine.transmit(
+        transmission = self.transmission_engine.transmit(
             contact_batch,
             self.state.world,
             self.state.disease,
             self.state.tick,
             self.rng,
             modifiers,
+        )
+        infections_by_zone = transmission.infections_by_zone
+        self.state.effective_beta_mean = transmission.effective_beta_mean
+        self.state.behavioral_transmission_reduction = (
+            transmission.behavioral_transmission_reduction
+        )
+        self.state.misinformation_transmission_amplification = (
+            transmission.misinformation_transmission_amplification
         )
         for record in contact_batch.records:
             record.new_infections = infections_by_zone.get(record.zone_id, 0)
@@ -209,6 +235,13 @@ class SimulationEngine:
                 contact_count=contact_batch.effective_contact_count,
                 movement_reduction_estimate=self.state.movement_reduction_estimate,
                 contact_reduction_estimate=self.state.contact_reduction_estimate,
+                raw_contact_count=contact_batch.raw_contact_count,
+                effective_contact_count=contact_batch.effective_contact_count,
+                effective_beta_mean=transmission.effective_beta_mean,
+                behavioral_transmission_reduction=transmission.behavioral_transmission_reduction,
+                misinformation_transmission_amplification=transmission.misinformation_transmission_amplification,
+                rumor_pressure=social.mean_rumor_pressure,
+                peer_warning_pressure=social.mean_peer_warning_pressure,
                 policy_effect_summary=self.state.policy_effect_summary.copy(),
             )
         )

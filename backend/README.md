@@ -23,6 +23,8 @@ Simulation lifecycle endpoints:
 - `GET /simulations/{simulation_id}/policies`
 - `GET /simulations/{simulation_id}/cognition`
 - `GET /simulations/{simulation_id}/information`
+- `GET /simulations/{simulation_id}/behavior`
+- `GET /simulations/{simulation_id}/social`
 - `POST /simulations/{simulation_id}/export`
 - `GET /runs`
 - `GET /runs/{run_id}/metadata`

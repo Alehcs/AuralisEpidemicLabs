@@ -25,9 +25,11 @@ export function ExperimentResults({ result }: ExperimentResultsProps) {
               <th>Gap (pp)</th>
               <th>Trust auth</th>
               <th>Fatigue</th>
-              <th>Compliance</th>
-              <th>Rumor exp</th>
-              <th>Contact reduction</th>
+              <th>Protection</th>
+              <th>Eff contacts</th>
+              <th>Eff β</th>
+              <th>Behav ↓</th>
+              <th>Misinfo β ↑</th>
             </tr>
           </thead>
           <tbody>
@@ -44,9 +46,11 @@ export function ExperimentResults({ result }: ExperimentResultsProps) {
                 <td>{(variant.aggregate.mean_perception_gap * 100).toFixed(1)}</td>
                 <td>{(variant.aggregate.mean_trust_authority * 100).toFixed(1)}%</td>
                 <td>{(variant.aggregate.mean_fatigue * 100).toFixed(1)}%</td>
-                <td>{(variant.aggregate.mean_compliance * 100).toFixed(1)}%</td>
-                <td>{(variant.aggregate.mean_rumor_exposure * 100).toFixed(1)}%</td>
-                <td>{(variant.aggregate.mean_contact_reduction * 100).toFixed(1)}%</td>
+                <td>{(variant.aggregate.mean_protection_behavior * 100).toFixed(1)}%</td>
+                <td>{variant.aggregate.effective_contact_count.toFixed(0)}</td>
+                <td>{variant.aggregate.effective_beta_mean.toFixed(4)}</td>
+                <td>{(variant.aggregate.behavioral_transmission_reduction * 100).toFixed(1)}%</td>
+                <td>{(variant.aggregate.misinformation_transmission_amplification * 100).toFixed(1)}%</td>
               </tr>
             ))}
           </tbody>

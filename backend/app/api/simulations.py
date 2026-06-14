@@ -8,12 +8,14 @@ from app.infrastructure.config_loader import ConfigLoader
 from app.infrastructure.exporters import RunExporter
 from app.schemas.simulation import (
     ExportRunResponse,
+    SimulationBehaviorResponse,
     SimulationCognitionResponse,
     SimulationCreateRequest,
     SimulationInformationResponse,
     SimulationMetricsResponse,
     SimulationPoliciesResponse,
     SimulationRunRequest,
+    SimulationSocialResponse,
     SimulationStateResponse,
 )
 
@@ -82,6 +84,20 @@ def simulation_information(simulation_id: str) -> SimulationInformationResponse:
     """Read configured information events and current exposure reach."""
 
     return service.information(simulation_id)
+
+
+@router.get("/{simulation_id}/behavior", response_model=SimulationBehaviorResponse)
+def simulation_behavior(simulation_id: str) -> SimulationBehaviorResponse:
+    """Read behavior aggregates and transmission-feedback effects."""
+
+    return service.behavior(simulation_id)
+
+
+@router.get("/{simulation_id}/social", response_model=SimulationSocialResponse)
+def simulation_social(simulation_id: str) -> SimulationSocialResponse:
+    """Read district-wide and per-zone social-influence pressures."""
+
+    return service.social(simulation_id)
 
 
 @router.post("/{simulation_id}/export", response_model=ExportRunResponse)

@@ -51,6 +51,11 @@ class SnapshotBuilder:
                 "adaptive_compliance": agent.adaptive_compliance,
                 "trust_authority": agent.trust_authority,
                 "fatigue": agent.fatigue,
+                "protection_behavior": agent.protection_behavior,
+                "distancing_behavior": agent.distancing_behavior,
+                "risk_compensation": agent.risk_compensation,
+                "peer_rumor_exposure": agent.peer_rumor_exposure,
+                "peer_warning_exposure": agent.peer_warning_exposure,
             }
             for agent in state.agents[:120]
         ]

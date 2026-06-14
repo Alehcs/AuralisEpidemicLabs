@@ -28,6 +28,13 @@ class ExperimentRunMetric(BaseModel):
     mean_fatigue: float = 0.0
     mean_compliance: float = 0.0
     mean_rumor_exposure: float = 0.0
+    mean_protection_behavior: float = 0.0
+    mean_distancing_behavior: float = 0.0
+    mean_risk_compensation: float = 0.0
+    effective_contact_count: float = 0.0
+    effective_beta_mean: float = 0.0
+    behavioral_transmission_reduction: float = 0.0
+    misinformation_transmission_amplification: float = 0.0
 
 
 class ExperimentRunResult(BaseModel):
