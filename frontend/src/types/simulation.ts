@@ -9,6 +9,15 @@ export interface MetricsSnapshot {
   new_infections: number;
   active_infections: number;
   cumulative_infections: number;
+  active_policy_count: number;
+  agents_under_local_alert: number;
+  agents_under_global_alert: number;
+  mean_perceived_risk: number;
+  mean_alert_exposure: number;
+  mean_contacts: number;
+  movement_reduction_estimate: number;
+  contact_reduction_estimate: number;
+  policy_effect_summary: Record<string, unknown>;
 }
 
 export interface ZoneSummary {
@@ -19,6 +28,9 @@ export interface ZoneSummary {
   infected: number;
   recovered: number;
   risk_level_simple: number;
+  mean_perceived_risk: number;
+  mean_alert_exposure: number;
+  active_policies: string[];
 }
 
 export interface SimulationTime {
@@ -58,6 +70,9 @@ export interface SimulationSnapshot {
     routine_type: string;
     home_zone_id: string;
     intended_destination: string | null;
+    perceived_risk: number;
+    alert_exposure: number;
+    compliance_tendency: number;
   }>;
 }
 
@@ -78,7 +93,8 @@ export interface SimulationCreateRequest {
   scenario_config: string;
   disease_config: string;
   population_config: string;
-  policy_config: string;
+  policy_config: string | null;
+  policy_configs: string[];
   seed: number;
 }
 
@@ -96,6 +112,11 @@ export interface ExperimentRunMetric {
   cumulative_infections: number;
   peak_active_infections: number;
   tick_of_peak: number;
+  mean_perceived_risk: number;
+  mean_alert_exposure: number;
+  mean_contacts: number;
+  mean_movement_reduction: number;
+  mean_contact_reduction: number;
 }
 
 export interface VariantResult {

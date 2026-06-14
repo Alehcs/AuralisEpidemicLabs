@@ -77,7 +77,7 @@ export function SimulationControls({
         </div>
       </div>
       <p className="panel-note">
-        {busy ? "Running deterministic operation…" : "Seed 42 · 60-minute ticks · local exports"}
+        {busy ? "Running deterministic operation…" : "Seed 42 · local alert + symptomatic isolation · local exports"}
       </p>
     </Panel>
   );

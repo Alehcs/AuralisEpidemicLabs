@@ -20,6 +20,11 @@ export function ExperimentResults({ result }: ExperimentResultsProps) {
               <th>Cumulative</th>
               <th>Peak active</th>
               <th>Peak tick</th>
+              <th>Mean risk</th>
+              <th>Alert exposure</th>
+              <th>Contacts</th>
+              <th>Move reduction</th>
+              <th>Contact reduction</th>
             </tr>
           </thead>
           <tbody>
@@ -31,12 +36,17 @@ export function ExperimentResults({ result }: ExperimentResultsProps) {
                 <td>{variant.aggregate.cumulative_infections.toFixed(0)}</td>
                 <td>{variant.aggregate.peak_active_infections.toFixed(0)}</td>
                 <td>{variant.aggregate.tick_of_peak.toFixed(1)}</td>
+                <td>{(variant.aggregate.mean_perceived_risk * 100).toFixed(1)}%</td>
+                <td>{(variant.aggregate.mean_alert_exposure * 100).toFixed(1)}%</td>
+                <td>{variant.aggregate.mean_contacts.toFixed(2)}</td>
+                <td>{(variant.aggregate.mean_movement_reduction * 100).toFixed(1)}%</td>
+                <td>{(variant.aggregate.mean_contact_reduction * 100).toFixed(1)}%</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <p className="panel-note">Policy variants currently exercise lifecycle hooks only; effects remain intentionally neutral.</p>
+      <p className="panel-note">Variants share seeds and differ only by their configured intervention set.</p>
     </Panel>
   );
 }

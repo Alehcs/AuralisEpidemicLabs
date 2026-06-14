@@ -26,7 +26,8 @@ const createRequest = {
   scenario_config: "district_v1_market_outbreak",
   disease_config: "respiratory_like_v1",
   population_config: "default_population_v1",
-  policy_config: "local_alert_policy",
+  policy_config: null,
+  policy_configs: ["local_alert_policy", "isolation_encouragement_policy"],
   seed: 42,
 };
 
@@ -122,7 +123,7 @@ export function App() {
           <ExperimentResults result={experimentResult} />
         </div>
       </main>
-      <footer>Phase 2 · Scheduled mobility, contacts, export/replay, batch experiments</footer>
+      <footer>Phase 3 · Real policy effects, official alerts, isolation, and comparative experiments</footer>
     </div>
   );
 }
