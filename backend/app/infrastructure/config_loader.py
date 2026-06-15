@@ -7,17 +7,22 @@ from typing import Any, TypeVar
 from pydantic import BaseModel, ValidationError
 
 from app.core.errors import ConfigNotFoundError, ConfigValidationError
+from app.domain.adaptive import AdaptivePolicy, AdaptiveRule
+from app.domain.behavior_params import BehaviorParameters
 from app.domain.disease import DiseaseProfile
 from app.domain.information import InformationEvent
 from app.domain.policy import Policy
 from app.domain.world import Route, World, Zone
 from app.schemas.configs import (
+    AdaptivePolicyConfig,
     AgentPopulationConfig,
+    BehaviorConfig,
     DiseaseConfig,
     ExperimentConfig,
     InformationEventConfig,
     PolicyConfig,
     ScenarioConfig,
+    SweepConfig,
 )
 
 ConfigModel = TypeVar("ConfigModel", bound=BaseModel)
@@ -28,6 +33,9 @@ SUPPORTED_CATEGORIES = {
     "policies",
     "experiments",
     "information",
+    "behavior",
+    "adaptive",
+    "sweeps",
 }
 
 
@@ -113,6 +121,21 @@ class ConfigLoader:
 
         return self.load_model("information", name, InformationEventConfig)
 
+    def load_behavior(self, name: str) -> BehaviorConfig:
+        """Load and validate a behavior-strength config."""
+
+        return self.load_model("behavior", name, BehaviorConfig)
+
+    def load_adaptive(self, name: str) -> AdaptivePolicyConfig:
+        """Load and validate an adaptive-policy config."""
+
+        return self.load_model("adaptive", name, AdaptivePolicyConfig)
+
+    def load_sweep(self, name: str) -> SweepConfig:
+        """Load and validate a parameter-sweep config."""
+
+        return self.load_model("sweeps", name, SweepConfig)
+
     @staticmethod
     def to_world(config: ScenarioConfig) -> World:
         """Convert a validated scenario into pure domain entities."""
@@ -170,6 +193,44 @@ class ConfigLoader:
             contact_impact=config.resolved_impact("contact_impact"),
             transmission_impact=config.resolved_impact("transmission_impact"),
             parameters={"trigger": config.trigger, "effects": config.effects},
+        )
+
+    @staticmethod
+    def to_behavior_parameters(config: BehaviorConfig) -> BehaviorParameters:
+        """Convert a validated behavior config into immutable parameters."""
+
+        return BehaviorParameters(
+            susceptible_protection_strength=config.susceptible_protection_strength,
+            infectious_protection_strength=config.infectious_protection_strength,
+            risk_compensation_strength=config.risk_compensation_strength,
+            distancing_contact_strength=config.distancing_contact_strength,
+            false_safety_amplification_strength=config.false_safety_amplification_strength,
+            anti_authority_compliance_penalty=config.anti_authority_compliance_penalty,
+            fatigue_protection_penalty=config.fatigue_protection_penalty,
+            peer_warning_protection_boost=config.peer_warning_protection_boost,
+        )
+
+    @staticmethod
+    def to_adaptive_policy(config: AdaptivePolicyConfig) -> AdaptivePolicy:
+        """Convert a validated adaptive config into a domain policy."""
+
+        return AdaptivePolicy(
+            id=config.id,
+            rules=tuple(
+                AdaptiveRule(
+                    id=rule.id,
+                    metric=rule.metric,
+                    operator=rule.operator,
+                    threshold=rule.threshold,
+                    action=rule.action,
+                    target=rule.target,
+                    target_zone_id=rule.target_zone_id,
+                    duration_ticks=rule.duration_ticks,
+                    intensity=rule.intensity,
+                    cooldown_ticks=rule.cooldown_ticks,
+                )
+                for rule in config.rules
+            ),
         )
 
     @staticmethod

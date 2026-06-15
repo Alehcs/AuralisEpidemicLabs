@@ -9,6 +9,28 @@ class ExperimentRunRequest(BaseModel):
     experiment_config: str = Field(default="global_vs_local_alert", min_length=1)
 
 
+class SweepRunRequest(BaseModel):
+    sweep_config: str = Field(default="behavior_sensitivity_v1", min_length=1)
+
+
+class SweepPointResult(BaseModel):
+    point_index: int
+    parameters: dict[str, float]
+    variants: list[dict[str, Any]]
+    focus_metrics: dict[str, float]
+
+
+class SweepResultResponse(BaseModel):
+    sweep_id: str
+    status: str
+    experiment_config: str
+    parameter_grid: dict[str, list[float]]
+    focus_variant: str
+    points: list[SweepPointResult]
+    best_response: dict[str, Any]
+    report: dict[str, Any]
+
+
 class ExperimentRunMetric(BaseModel):
     final_susceptible: int
     final_exposed: int
@@ -35,6 +57,7 @@ class ExperimentRunMetric(BaseModel):
     effective_beta_mean: float = 0.0
     behavioral_transmission_reduction: float = 0.0
     misinformation_transmission_amplification: float = 0.0
+    adaptive_policy_trigger_count: float = 0.0
 
 
 class ExperimentRunResult(BaseModel):

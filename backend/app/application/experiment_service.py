@@ -1,18 +1,20 @@
 """Deterministic headless batch experiment use cases."""
 
 from statistics import fmean
+from typing import Any
 
 from app.core.errors import ExperimentNotFoundError
+from app.domain.behavior_params import BehaviorParameters
 from app.infrastructure.config_loader import ConfigLoader
 from app.infrastructure.exporters import ExperimentReportExporter
 from app.infrastructure.file_storage import FileStorage
-from app.schemas.configs import PolicyConfig
+from app.schemas.configs import ExperimentConfig, PolicyConfig
 from app.schemas.experiments import ExperimentResultResponse
 from app.simulation.engine import SimulationEngine
 
 
 class ExperimentService:
-    """Run config-driven policy variants with shared seeds and fixed ticks."""
+    """Run config-driven policy/behavior/adaptive variants with shared seeds."""
 
     def __init__(
         self,
@@ -26,128 +28,7 @@ class ExperimentService:
 
     def run(self, experiment_name: str) -> ExperimentResultResponse:
         experiment = self.loader.load_experiment(experiment_name)
-        scenario = self.loader.load_scenario(experiment.scenario_config)
-        disease_config = self.loader.load_disease(experiment.disease_config)
-        population = self.loader.load_population(experiment.population_config)
-        seeds = self._seeds(experiment.seeds, experiment.repetitions)
-        variant_results = []
-        run_index = []
-
-        for variant in experiment.variants:
-            policy_names = variant.policy_configs or (
-                [variant.policy_config] if variant.policy_config else []
-            )
-            policy_configs = [self.loader.load_policy(name) for name in policy_names]
-            if policy_configs and variant.overrides:
-                policy_payload = {**policy_configs[0].model_dump(), **variant.overrides}
-                policy_configs[0] = PolicyConfig.model_validate(policy_payload)
-            policies = [self.loader.to_policy(policy) for policy in policy_configs]
-            information_events = [
-                self.loader.to_information_event(self.loader.load_information(name))
-                for name in variant.information_configs
-            ]
-            runs = []
-            for run_number, seed in enumerate(seeds):
-                run_id = f"{experiment.id}-{variant.id}-{run_number:02d}-{seed}"
-                engine = SimulationEngine.create(
-                    simulation_id=run_id,
-                    world=self.loader.to_world(scenario),
-                    disease=self.loader.to_disease(disease_config),
-                    population_config=population,
-                    outbreak=scenario.initial_outbreak,
-                    seed=seed,
-                    policy=policies[0] if len(policies) == 1 else None,
-                    policies=policies,
-                    information_events=information_events,
-                    config_summary={
-                        "experiment_id": experiment.id,
-                        "variant_id": variant.id,
-                        "seed": seed,
-                    },
-                )
-                snapshot = engine.run(experiment.ticks)
-                peak = max(engine.state.metrics_history, key=lambda item: item.active_infections)
-                history = engine.state.metrics_history[1:] or engine.state.metrics_history
-                metrics = {
-                    "final_susceptible": snapshot.metrics.susceptible_count,
-                    "final_exposed": snapshot.metrics.exposed_count,
-                    "final_infected": (
-                        snapshot.metrics.infected_asymptomatic_count
-                        + snapshot.metrics.infected_symptomatic_count
-                        + snapshot.metrics.isolated_count
-                    ),
-                    "final_recovered": snapshot.metrics.recovered_count,
-                    "cumulative_infections": snapshot.metrics.cumulative_infections,
-                    "peak_active_infections": peak.active_infections,
-                    "tick_of_peak": peak.tick,
-                    "mean_perceived_risk": round(
-                        fmean(item.mean_perceived_risk for item in history), 6
-                    ),
-                    "mean_alert_exposure": round(
-                        fmean(item.mean_alert_exposure for item in history), 6
-                    ),
-                    "mean_contacts": round(fmean(item.mean_contacts for item in history), 6),
-                    "mean_movement_reduction": round(
-                        fmean(item.movement_reduction_estimate for item in history), 6
-                    ),
-                    "mean_contact_reduction": round(
-                        fmean(item.contact_reduction_estimate for item in history), 6
-                    ),
-                    "mean_real_risk": round(
-                        fmean(item.mean_real_risk for item in history), 6
-                    ),
-                    "mean_perception_gap": round(
-                        fmean(item.mean_perception_gap for item in history), 6
-                    ),
-                    "mean_trust_authority": round(
-                        fmean(item.mean_trust_authority for item in history), 6
-                    ),
-                    "mean_fatigue": round(
-                        fmean(item.mean_fatigue for item in history), 6
-                    ),
-                    "mean_compliance": round(
-                        fmean(item.mean_compliance for item in history), 6
-                    ),
-                    "mean_rumor_exposure": round(
-                        fmean(item.mean_rumor_exposure for item in history), 6
-                    ),
-                    "mean_protection_behavior": round(
-                        fmean(item.mean_protection_behavior for item in history), 6
-                    ),
-                    "mean_distancing_behavior": round(
-                        fmean(item.mean_distancing_behavior for item in history), 6
-                    ),
-                    "mean_risk_compensation": round(
-                        fmean(item.mean_risk_compensation for item in history), 6
-                    ),
-                    "effective_contact_count": round(
-                        fmean(item.effective_contact_count for item in history), 6
-                    ),
-                    "effective_beta_mean": round(
-                        fmean(item.effective_beta_mean for item in history), 6
-                    ),
-                    "behavioral_transmission_reduction": round(
-                        fmean(item.behavioral_transmission_reduction for item in history), 6
-                    ),
-                    "misinformation_transmission_amplification": round(
-                        fmean(
-                            item.misinformation_transmission_amplification
-                            for item in history
-                        ),
-                        6,
-                    ),
-                }
-                run = {"run_id": run_id, "variant_id": variant.id, "seed": seed, "metrics": metrics}
-                runs.append(run)
-                run_index.append({"run_id": run_id, "variant_id": variant.id, "seed": seed})
-
-            metric_names = list(runs[0]["metrics"])
-            aggregate = {
-                name: round(fmean(run["metrics"][name] for run in runs), 6)
-                for name in metric_names
-            }
-            variant_results.append({"variant_id": variant.id, "runs": runs, "aggregate": aggregate})
-
+        variant_results, run_index, seeds = self.run_variants(experiment)
         summary = {
             "experiment_id": experiment.id,
             "name": experiment.name,
@@ -166,6 +47,148 @@ class ExperimentService:
                 "report": report,
             }
         )
+
+    def run_variants(
+        self,
+        experiment: ExperimentConfig,
+        behavior_overrides: dict[str, float] | None = None,
+        ticks: int | None = None,
+        seeds: list[int] | None = None,
+        population_size: int | None = None,
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[int]]:
+        """Run every variant; reusable by the report runner and the sweep runner.
+
+        ``behavior_overrides`` lets the sweep runner override behavior strengths
+        on top of each variant's behavior config.
+        """
+
+        scenario = self.loader.load_scenario(experiment.scenario_config)
+        disease_config = self.loader.load_disease(experiment.disease_config)
+        population = self.loader.load_population(experiment.population_config)
+        if population_size is not None:
+            population = population.model_copy(update={"population_size": population_size})
+        resolved_ticks = ticks if ticks is not None else experiment.ticks
+        resolved_seeds = seeds or self._seeds(experiment.seeds, experiment.repetitions)
+
+        variant_results: list[dict[str, Any]] = []
+        run_index: list[dict[str, Any]] = []
+        for variant in experiment.variants:
+            policy_names = variant.policy_configs or (
+                [variant.policy_config] if variant.policy_config else []
+            )
+            policy_configs = [self.loader.load_policy(name) for name in policy_names]
+            if policy_configs and variant.overrides:
+                policy_payload = {**policy_configs[0].model_dump(), **variant.overrides}
+                policy_configs[0] = PolicyConfig.model_validate(policy_payload)
+            policies = [self.loader.to_policy(policy) for policy in policy_configs]
+            information_events = [
+                self.loader.to_information_event(self.loader.load_information(name))
+                for name in variant.information_configs
+            ]
+            behavior_params = self._behavior_params(experiment, variant, behavior_overrides)
+            adaptive_policy = (
+                self.loader.to_adaptive_policy(
+                    self.loader.load_adaptive(variant.adaptive_policy_config)
+                )
+                if variant.adaptive_policy_config
+                else None
+            )
+
+            runs = []
+            for run_number, seed in enumerate(resolved_seeds):
+                run_id = f"{experiment.id}-{variant.id}-{run_number:02d}-{seed}"
+                engine = SimulationEngine.create(
+                    simulation_id=run_id,
+                    world=self.loader.to_world(scenario),
+                    disease=self.loader.to_disease(disease_config),
+                    population_config=population,
+                    outbreak=scenario.initial_outbreak,
+                    seed=seed,
+                    policy=policies[0] if len(policies) == 1 else None,
+                    policies=policies,
+                    information_events=information_events,
+                    behavior_params=behavior_params,
+                    adaptive_policy=adaptive_policy,
+                    config_summary={
+                        "experiment_id": experiment.id,
+                        "variant_id": variant.id,
+                        "seed": seed,
+                    },
+                )
+                snapshot = engine.run(resolved_ticks)
+                metrics = self._collect_metrics(engine, snapshot)
+                runs.append(
+                    {"run_id": run_id, "variant_id": variant.id, "seed": seed, "metrics": metrics}
+                )
+                run_index.append({"run_id": run_id, "variant_id": variant.id, "seed": seed})
+
+            metric_names = list(runs[0]["metrics"])
+            aggregate = {
+                name: round(fmean(run["metrics"][name] for run in runs), 6)
+                for name in metric_names
+            }
+            variant_results.append(
+                {"variant_id": variant.id, "runs": runs, "aggregate": aggregate}
+            )
+        return variant_results, run_index, resolved_seeds
+
+    @staticmethod
+    def _collect_metrics(engine: SimulationEngine, snapshot: Any) -> dict[str, float]:
+        peak = max(engine.state.metrics_history, key=lambda item: item.active_infections)
+        history = engine.state.metrics_history[1:] or engine.state.metrics_history
+        mean = lambda attr: round(fmean(getattr(item, attr) for item in history), 6)
+        return {
+            "final_susceptible": snapshot.metrics.susceptible_count,
+            "final_exposed": snapshot.metrics.exposed_count,
+            "final_infected": (
+                snapshot.metrics.infected_asymptomatic_count
+                + snapshot.metrics.infected_symptomatic_count
+                + snapshot.metrics.isolated_count
+            ),
+            "final_recovered": snapshot.metrics.recovered_count,
+            "cumulative_infections": snapshot.metrics.cumulative_infections,
+            "peak_active_infections": peak.active_infections,
+            "tick_of_peak": peak.tick,
+            "mean_perceived_risk": mean("mean_perceived_risk"),
+            "mean_alert_exposure": mean("mean_alert_exposure"),
+            "mean_contacts": mean("mean_contacts"),
+            "mean_movement_reduction": mean("movement_reduction_estimate"),
+            "mean_contact_reduction": mean("contact_reduction_estimate"),
+            "mean_real_risk": mean("mean_real_risk"),
+            "mean_perception_gap": mean("mean_perception_gap"),
+            "mean_trust_authority": mean("mean_trust_authority"),
+            "mean_fatigue": mean("mean_fatigue"),
+            "mean_compliance": mean("mean_compliance"),
+            "mean_rumor_exposure": mean("mean_rumor_exposure"),
+            "mean_protection_behavior": mean("mean_protection_behavior"),
+            "mean_distancing_behavior": mean("mean_distancing_behavior"),
+            "mean_risk_compensation": mean("mean_risk_compensation"),
+            "effective_contact_count": mean("effective_contact_count"),
+            "effective_beta_mean": mean("effective_beta_mean"),
+            "behavioral_transmission_reduction": mean("behavioral_transmission_reduction"),
+            "misinformation_transmission_amplification": mean(
+                "misinformation_transmission_amplification"
+            ),
+            "adaptive_policy_trigger_count": snapshot.metrics.adaptive_policy_trigger_count,
+        }
+
+    def _behavior_params(
+        self,
+        experiment: ExperimentConfig,
+        variant: Any,
+        behavior_overrides: dict[str, float] | None,
+    ) -> BehaviorParameters:
+        config_name = variant.behavior_config or experiment.behavior_config
+        if config_name:
+            base = self.loader.load_behavior(config_name).model_dump()
+        else:
+            base = {}
+        defaults = BehaviorParameters()
+        fields = {f for f in defaults.__slots__}
+        values = {field: base.get(field, getattr(defaults, field)) for field in fields}
+        if behavior_overrides:
+            values.update({k: v for k, v in behavior_overrides.items() if k in fields})
+        return BehaviorParameters(**values)
 
     def results(self, experiment_id: str) -> ExperimentResultResponse:
         prefix = f"reports/{experiment_id}"

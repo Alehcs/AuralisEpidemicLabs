@@ -25,11 +25,14 @@ Simulation lifecycle endpoints:
 - `GET /simulations/{simulation_id}/information`
 - `GET /simulations/{simulation_id}/behavior`
 - `GET /simulations/{simulation_id}/social`
+- `GET /simulations/{simulation_id}/adaptive-policies`
 - `POST /simulations/{simulation_id}/export`
 - `GET /runs`
 - `GET /runs/{run_id}/metadata`
 - `GET /runs/{run_id}/snapshots`
 - `POST /experiments/run`
 - `GET /experiments/{experiment_id}/results`
+- `POST /experiments/sweep`
+- `GET /experiments/{sweep_id}/sweep-results`
 
 Simulations are stored in process memory and disappear when the backend stops.

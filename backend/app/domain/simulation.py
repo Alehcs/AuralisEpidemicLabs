@@ -3,7 +3,9 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from app.domain.adaptive import AdaptivePolicy
 from app.domain.agent import Agent
+from app.domain.behavior_params import BehaviorParameters
 from app.domain.contacts import ContactRecord
 from app.domain.disease import DiseaseProfile
 from app.domain.information import InformationEvent
@@ -28,6 +30,8 @@ class SimulationState:
     policy: Policy | None = None
     policies: list[Policy] = field(default_factory=list)
     information_events: list[InformationEvent] = field(default_factory=list)
+    behavior_params: BehaviorParameters = field(default_factory=BehaviorParameters)
+    adaptive_policy: AdaptivePolicy | None = None
     new_infections: int = 0
     metrics_history: list[MetricsSnapshot] = field(default_factory=list)
     contact_history: list[ContactRecord] = field(default_factory=list)
@@ -49,6 +53,14 @@ class SimulationState:
     rumor_pressure: float = 0.0
     peer_warning_pressure: float = 0.0
     zone_social_pressures: dict[str, dict[str, float]] = field(default_factory=dict)
+    adaptive_policy_trigger_count: int = 0
+    adaptive_policy_active_count: int = 0
+    counter_messaging_active: bool = False
+    peer_warning_campaign_active: bool = False
+    trust_repair_active: bool = False
+    adaptive_isolation_active: bool = False
+    last_triggered_adaptive_rule: str | None = None
+    adaptive_policy_effect_summary: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)

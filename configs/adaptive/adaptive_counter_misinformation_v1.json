@@ -1,0 +1,29 @@
+{
+  "id": "adaptive_counter_misinformation_v1",
+  "name": "Adaptive Counter-Misinformation",
+  "rules": [
+    {
+      "id": "counter_false_safety",
+      "metric": "misinformation_transmission_amplification",
+      "operator": ">",
+      "threshold": 0.08,
+      "action": "COUNTER_MESSAGING",
+      "target": "global",
+      "duration_ticks": 24,
+      "intensity": 0.7,
+      "cooldown_ticks": 12
+    },
+    {
+      "id": "reinforce_protection",
+      "metric": "behavioral_transmission_reduction",
+      "operator": "<",
+      "threshold": 0.12,
+      "action": "TARGETED_LOCAL_ALERT",
+      "target": "local",
+      "target_zone_id": "market",
+      "duration_ticks": 24,
+      "intensity": 0.6,
+      "cooldown_ticks": 24
+    }
+  ]
+}

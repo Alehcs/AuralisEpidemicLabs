@@ -1,0 +1,13 @@
+{
+  "id": "behavior_sensitivity_v1",
+  "name": "Misinformation Behavior Sensitivity",
+  "experiment_config": "misinformation_epidemic_impact",
+  "parameter_grid": {
+    "false_safety_amplification_strength": [0.45, 0.9],
+    "risk_compensation_strength": [0.6, 1.2]
+  },
+  "seeds": [42],
+  "ticks": 72,
+  "population_size": 1200,
+  "focus_variant": "false_safety_rumor"
+}

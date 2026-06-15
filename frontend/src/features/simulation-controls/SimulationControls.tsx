@@ -2,6 +2,14 @@ import { useState } from "react";
 
 import { Panel } from "../../components/ui/Panel";
 
+const EXPERIMENTS = [
+  { id: "global_vs_local_alert", label: "Baseline vs alerts" },
+  { id: "official_alert_vs_rumors", label: "Official vs rumors" },
+  { id: "misinformation_epidemic_impact", label: "Misinformation impact" },
+  { id: "adaptive_counter_misinformation", label: "Adaptive counter-misinformation" },
+  { id: "static_vs_adaptive_policy", label: "Static vs adaptive policy" },
+];
+
 interface SimulationControlsProps {
   busy: boolean;
   hasSimulation: boolean;
@@ -10,9 +18,8 @@ interface SimulationControlsProps {
   onRun: (ticks: number) => void;
   onReset: () => void;
   onExport: () => void;
-  onRunExperiment: () => void;
-  onRunRumorExperiment: () => void;
-  onRunMisinformationExperiment: () => void;
+  onRunExperiment: (experimentConfig: string) => void;
+  onRunSweep: () => void;
 }
 
 export function SimulationControls({
@@ -24,10 +31,10 @@ export function SimulationControls({
   onReset,
   onExport,
   onRunExperiment,
-  onRunRumorExperiment,
-  onRunMisinformationExperiment,
+  onRunSweep,
 }: SimulationControlsProps) {
   const [runTicks, setRunTicks] = useState(24);
+  const [experiment, setExperiment] = useState("global_vs_local_alert");
 
   return (
     <Panel title="Simulation controls" eyebrow="Interactive run">
@@ -54,6 +61,16 @@ export function SimulationControls({
             onChange={(event) => setRunTicks(Number(event.target.value))}
           />
         </label>
+        <label>
+          Experiment
+          <select value={experiment} onChange={(event) => setExperiment(event.target.value)}>
+            {EXPERIMENTS.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <div className="button-grid">
           <button type="button" disabled={busy || hasSimulation} onClick={onCreate}>
             Create simulation
@@ -75,21 +92,18 @@ export function SimulationControls({
           <button type="button" className="button-secondary" disabled={busy || !hasSimulation} onClick={onExport}>
             Export current run
           </button>
-          <button type="button" className="button-secondary" disabled={busy} onClick={onRunExperiment}>
-            Run batch experiment
+          <button type="button" className="button-secondary" disabled={busy} onClick={() => onRunExperiment(experiment)}>
+            Run experiment
           </button>
-          <button type="button" className="button-secondary" disabled={busy} onClick={onRunRumorExperiment}>
-            Run rumor experiment
-          </button>
-          <button type="button" className="button-secondary" disabled={busy} onClick={onRunMisinformationExperiment}>
-            Run misinformation experiment
+          <button type="button" className="button-secondary" disabled={busy} onClick={onRunSweep}>
+            Run sensitivity sweep
           </button>
         </div>
       </div>
       <p className="panel-note">
         {busy
           ? "Running deterministic operation…"
-          : "Seed 42 · local alert + symptomatic isolation · cognition, trust, fatigue & rumors"}
+          : "Seed 42 · cognition, behavior, rumors & adaptive interventions"}
       </p>
     </Panel>
   );

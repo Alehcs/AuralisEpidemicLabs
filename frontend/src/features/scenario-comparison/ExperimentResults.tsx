@@ -30,6 +30,7 @@ export function ExperimentResults({ result }: ExperimentResultsProps) {
               <th>Eff β</th>
               <th>Behav ↓</th>
               <th>Misinfo β ↑</th>
+              <th>Adapt. triggers</th>
             </tr>
           </thead>
           <tbody>
@@ -51,6 +52,7 @@ export function ExperimentResults({ result }: ExperimentResultsProps) {
                 <td>{variant.aggregate.effective_beta_mean.toFixed(4)}</td>
                 <td>{(variant.aggregate.behavioral_transmission_reduction * 100).toFixed(1)}%</td>
                 <td>{(variant.aggregate.misinformation_transmission_amplification * 100).toFixed(1)}%</td>
+                <td>{variant.aggregate.adaptive_policy_trigger_count.toFixed(1)}</td>
               </tr>
             ))}
           </tbody>

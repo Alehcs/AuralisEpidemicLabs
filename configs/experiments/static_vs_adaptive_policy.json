@@ -1,0 +1,38 @@
+{
+  "id": "static_vs_adaptive_policy",
+  "name": "Static vs Adaptive Interventions",
+  "scenario_config": "district_v1_market_outbreak",
+  "disease_config": "respiratory_like_v1",
+  "population_config": "default_population_v1",
+  "repetitions": 2,
+  "seeds": [42, 84],
+  "ticks": 168,
+  "behavior_config": "responsive_population_v1",
+  "variants": [
+    {
+      "id": "baseline",
+      "policy_configs": []
+    },
+    {
+      "id": "false_safety_static_alert",
+      "policy_config": "local_alert_policy",
+      "information_configs": ["false_safety_market"]
+    },
+    {
+      "id": "false_safety_adaptive_counter_message",
+      "information_configs": ["false_safety_market"],
+      "adaptive_policy_config": "adaptive_counter_misinformation_v1"
+    },
+    {
+      "id": "anti_authority_static_alert",
+      "policy_config": "global_alert_policy",
+      "information_configs": ["anti_authority_rumor"]
+    },
+    {
+      "id": "anti_authority_adaptive_peer_warning",
+      "policy_config": "global_alert_policy",
+      "information_configs": ["anti_authority_rumor"],
+      "adaptive_policy_config": "adaptive_peer_warning_v1"
+    }
+  ]
+}

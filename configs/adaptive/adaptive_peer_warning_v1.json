@@ -1,0 +1,28 @@
+{
+  "id": "adaptive_peer_warning_v1",
+  "name": "Adaptive Peer Warning and Trust Repair",
+  "rules": [
+    {
+      "id": "warn_on_distrust",
+      "metric": "mean_trust_authority",
+      "operator": "<",
+      "threshold": 0.45,
+      "action": "PEER_WARNING_CAMPAIGN",
+      "target": "global",
+      "duration_ticks": 24,
+      "intensity": 0.8,
+      "cooldown_ticks": 12
+    },
+    {
+      "id": "repair_trust",
+      "metric": "mean_trust_authority",
+      "operator": "<",
+      "threshold": 0.3,
+      "action": "TRUST_REPAIR_MESSAGE",
+      "target": "global",
+      "duration_ticks": 24,
+      "intensity": 0.7,
+      "cooldown_ticks": 24
+    }
+  ]
+}

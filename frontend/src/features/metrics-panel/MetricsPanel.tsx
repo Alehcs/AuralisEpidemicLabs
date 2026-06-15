@@ -63,6 +63,16 @@ export function MetricsPanel({ snapshot }: MetricsPanelProps) {
     ["Behavioral transmission ↓", pct(metrics?.behavioral_transmission_reduction)],
     ["Misinformation β ↑", metrics ? `${(metrics.misinformation_transmission_amplification * 100).toFixed(1)}%` : "--"],
   ];
+  const onOff = (value: boolean | undefined) => (value ? "On" : "Off");
+  const adaptive: Array<[string, string]> = [
+    ["Adaptive active", metrics ? formatStep(metrics.adaptive_policy_active_count) : "--"],
+    ["Trigger count", metrics ? formatStep(metrics.adaptive_policy_trigger_count) : "--"],
+    ["Last rule", metrics?.last_triggered_adaptive_rule ?? "—"],
+    ["Counter-messaging", onOff(metrics?.counter_messaging_active)],
+    ["Peer warning campaign", onOff(metrics?.peer_warning_campaign_active)],
+    ["Trust repair", onOff(metrics?.trust_repair_active)],
+    ["Adaptive isolation", onOff(metrics?.adaptive_isolation_active)],
+  ];
 
   return (
     <Panel title="Metrics" eyebrow="Live snapshot">
@@ -95,6 +105,15 @@ export function MetricsPanel({ snapshot }: MetricsPanelProps) {
       <p className="metric-group-label">Behavior &amp; transmission</p>
       <div className="metric-grid">
         {behavior.map(([label, value]) => (
+          <div className="metric" key={label}>
+            <span>{label}</span>
+            <strong>{value}</strong>
+          </div>
+        ))}
+      </div>
+      <p className="metric-group-label">Adaptive interventions</p>
+      <div className="metric-grid">
+        {adaptive.map(([label, value]) => (
           <div className="metric" key={label}>
             <span>{label}</span>
             <strong>{value}</strong>

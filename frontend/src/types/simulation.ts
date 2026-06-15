@@ -44,7 +44,15 @@ export interface MetricsSnapshot {
   misinformation_transmission_amplification: number;
   rumor_pressure: number;
   peer_warning_pressure: number;
+  adaptive_policy_trigger_count: number;
+  adaptive_policy_active_count: number;
+  counter_messaging_active: boolean;
+  peer_warning_campaign_active: boolean;
+  trust_repair_active: boolean;
+  adaptive_isolation_active: boolean;
+  last_triggered_adaptive_rule: string | null;
   policy_effect_summary: Record<string, unknown>;
+  adaptive_policy_effect_summary: Record<string, unknown>;
 }
 
 export interface ZoneSummary {
@@ -172,6 +180,7 @@ export interface ExperimentRunMetric {
   effective_beta_mean: number;
   behavioral_transmission_reduction: number;
   misinformation_transmission_amplification: number;
+  adaptive_policy_trigger_count: number;
 }
 
 export interface VariantResult {
@@ -190,5 +199,28 @@ export interface ExperimentResultResponse {
   status: string;
   ticks: number;
   variants: VariantResult[];
+  report: { directory: string; files: string[] };
+}
+
+export interface SweepPoint {
+  point_index: number;
+  parameters: Record<string, number>;
+  variants: Array<{ variant_id: string; aggregate: ExperimentRunMetric }>;
+  focus_metrics: Record<string, number>;
+}
+
+export interface SweepResultResponse {
+  sweep_id: string;
+  status: string;
+  experiment_config: string;
+  parameter_grid: Record<string, number[]>;
+  focus_variant: string;
+  points: SweepPoint[];
+  best_response: {
+    point_index: number;
+    parameters: Record<string, number>;
+    focus_variant: string;
+    focus_metrics: Record<string, number>;
+  };
   report: { directory: string; files: string[] };
 }

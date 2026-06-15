@@ -6,16 +6,15 @@ from dataclasses import dataclass, field
 from statistics import fmean
 
 from app.domain.agent import Agent, EpidemiologicalState
+from app.domain.behavior_params import BehaviorParameters
 from app.domain.disease import DiseaseProfile
 from app.domain.world import World
 from app.simulation.contacts import ContactBatch
 from app.simulation.policies import PolicyModifiers
 
-# Strength of agent behavior on the per-tick infection hazard (Phase 5).
-_SUSCEPTIBLE_PROTECTION_STRENGTH = 0.6
-_INFECTIOUS_PROTECTION_STRENGTH = 0.5
+# Internal distancing strength on the hazard (not exposed as a sweep parameter;
+# distancing is primarily a contact-level effect).
 _DISTANCING_STRENGTH = 0.35
-_RISK_COMPENSATION_STRENGTH = 0.6
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,6 +70,7 @@ class TransmissionEngine:
         tick: int,
         rng: random.Random,
         policy_modifiers: PolicyModifiers | None = None,
+        params: BehaviorParameters | None = None,
     ) -> TransmissionResult:
         """Apply the prevalence hazard, modulated by policy and agent behavior.
 
@@ -81,6 +81,7 @@ class TransmissionEngine:
         """
 
         modifiers = policy_modifiers or PolicyModifiers()
+        params = params or BehaviorParameters()
         infections_by_zone: dict[str, int] = {}
         tick_fraction = disease.tick_minutes / 1440
         sum_policy = 0.0
@@ -102,7 +103,9 @@ class TransmissionEngine:
                 * modifiers.contact_multiplier(context.zone_id)
                 * modifiers.transmission_multiplier(context.zone_id)
             )
-            protective_factor, amplifying_factor = self._behavior_factors(context.agents)
+            protective_factor, amplifying_factor = self._behavior_factors(
+                context.agents, params
+            )
             behavior_factor = protective_factor * amplifying_factor
             probability = 1 - math.exp(-policy_hazard * behavior_factor)
             new_infections = 0
@@ -139,7 +142,10 @@ class TransmissionEngine:
         )
 
     @staticmethod
-    def _behavior_factors(agents: list[Agent]) -> tuple[float, float]:
+    def _behavior_factors(
+        agents: list[Agent],
+        params: BehaviorParameters,
+    ) -> tuple[float, float]:
         """Return (protective_factor, amplifying_factor) for one zone."""
 
         susceptible_protection = [
@@ -157,9 +163,9 @@ class TransmissionEngine:
         mean_distancing = fmean(agent.distancing_behavior for agent in agents)
         mean_risk_comp = fmean(agent.risk_compensation for agent in agents)
         protective_factor = (
-            (1 - mean_sus * _SUSCEPTIBLE_PROTECTION_STRENGTH)
-            * (1 - mean_out * _INFECTIOUS_PROTECTION_STRENGTH)
+            (1 - mean_sus * params.susceptible_protection_strength)
+            * (1 - mean_out * params.infectious_protection_strength)
             * (1 - mean_distancing * _DISTANCING_STRENGTH)
         )
-        amplifying_factor = 1 + mean_risk_comp * _RISK_COMPENSATION_STRENGTH
+        amplifying_factor = 1 + mean_risk_comp * params.risk_compensation_strength
         return max(0.0, protective_factor), amplifying_factor

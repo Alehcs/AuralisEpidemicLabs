@@ -1,0 +1,12 @@
+{
+  "id": "calibrated_baseline_v1",
+  "name": "Calibrated Baseline Behavior Strengths",
+  "susceptible_protection_strength": 0.6,
+  "infectious_protection_strength": 0.5,
+  "risk_compensation_strength": 0.6,
+  "distancing_contact_strength": 0.5,
+  "false_safety_amplification_strength": 0.45,
+  "anti_authority_compliance_penalty": 0.15,
+  "fatigue_protection_penalty": 0.35,
+  "peer_warning_protection_boost": 0.0
+}

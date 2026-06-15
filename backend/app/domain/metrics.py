@@ -55,7 +55,16 @@ class MetricsSnapshot:
     misinformation_transmission_amplification: float = 0.0
     rumor_pressure: float = 0.0
     peer_warning_pressure: float = 0.0
+    # --- Phase 6 adaptive intervention aggregates ---
+    adaptive_policy_trigger_count: int = 0
+    adaptive_policy_active_count: int = 0
+    counter_messaging_active: bool = False
+    peer_warning_campaign_active: bool = False
+    trust_repair_active: bool = False
+    adaptive_isolation_active: bool = False
+    last_triggered_adaptive_rule: str | None = None
     policy_effect_summary: dict[str, Any] = field(default_factory=dict)
+    adaptive_policy_effect_summary: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)

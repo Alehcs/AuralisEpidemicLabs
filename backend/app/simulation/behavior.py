@@ -16,27 +16,37 @@ behavior. All outputs are clamped to [0, 1].
 """
 
 from app.domain.agent import Agent
+from app.domain.behavior_params import BehaviorParameters
 from app.simulation.policies import PolicyModifiers
 
 
 class BehaviorEngine:
     """Compute bounded protective/risky behavior from cognitive state."""
 
-    def step(self, agents: list[Agent], modifiers: PolicyModifiers, tick: int) -> None:
+    def step(
+        self,
+        agents: list[Agent],
+        modifiers: PolicyModifiers,
+        tick: int,
+        params: BehaviorParameters | None = None,
+    ) -> None:
+        params = params or BehaviorParameters()
         for agent in agents:
             believed_safety = agent.safety_rumor_exposure * agent.rumor_belief
             anti_authority = agent.anti_authority_exposure * agent.rumor_belief
 
-            # Protection rises with perceived risk, compliance, and trusted
-            # official alerts; fatigue, believed safety and distrust erode it.
+            # Protection rises with perceived risk, compliance, trusted official
+            # alerts and peer warnings; fatigue, believed safety and distrust
+            # erode it.
             protection = (
                 0.45 * agent.perceived_risk
                 + 0.30 * agent.adaptive_compliance
                 + 0.20 * agent.trust_authority * agent.official_alert_exposure
             )
-            protection *= 1.0 - 0.35 * agent.fatigue
+            protection *= 1.0 - params.fatigue_protection_penalty * agent.fatigue
             protection -= 0.30 * believed_safety
-            protection -= 0.15 * anti_authority
+            protection -= params.anti_authority_compliance_penalty * anti_authority
+            protection += params.peer_warning_protection_boost * agent.peer_warning_exposure
             agent.protection_behavior = self._bounded(protection)
             agent.masking_or_precaution_level = agent.protection_behavior
 
@@ -54,7 +64,7 @@ class BehaviorEngine:
             # Risk compensation: complacency from believed safety, fatigue and a
             # low personal sense of risk.
             agent.risk_compensation = self._bounded(
-                0.45 * believed_safety
+                params.false_safety_amplification_strength * believed_safety
                 + 0.30 * agent.fatigue
                 + 0.25 * max(0.0, 0.5 - agent.perceived_risk)
             )

@@ -11,6 +11,14 @@ experiments, and information. Config names are file stems, for example
 means) and `behavioral_profiles` biases; both default safely when omitted so
 earlier configs keep working.
 
+`behavior/` holds Phase 6 behavior/transmission strength sets (defaults match the
+calibrated Phase 5 constants). `adaptive/` holds adaptive-policy rule bundles that
+react to live metrics (`counter_messaging`, `peer_warning_campaign`,
+`trust_repair_message`, `targeted_local_alert`, `adaptive_isolation_encouragement`).
+`sweeps/` holds parameter-grid sensitivity configs consumed by
+`POST /experiments/sweep`. Experiments and their variants may reference a
+`behavior_config` and an `adaptive_policy_config`; all default safely when omitted.
+
 The examples are synthetic and are not epidemiological guidance or calibrated
 models of real-world disease.
 

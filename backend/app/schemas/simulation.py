@@ -14,6 +14,8 @@ class SimulationCreateRequest(BaseModel):
     policy_config: str | None = "local_alert_policy"
     policy_configs: list[str] = Field(default_factory=list)
     information_configs: list[str] = Field(default_factory=list)
+    behavior_config: str | None = None
+    adaptive_policy_config: str | None = None
     seed: int = Field(default=42, ge=0)
 
 
@@ -69,7 +71,15 @@ class MetricsSnapshotResponse(BaseModel):
     misinformation_transmission_amplification: float = Field(default=0.0, ge=0)
     rumor_pressure: float = Field(default=0.0, ge=0, le=1)
     peer_warning_pressure: float = Field(default=0.0, ge=0, le=1)
+    adaptive_policy_trigger_count: int = Field(default=0, ge=0)
+    adaptive_policy_active_count: int = Field(default=0, ge=0)
+    counter_messaging_active: bool = False
+    peer_warning_campaign_active: bool = False
+    trust_repair_active: bool = False
+    adaptive_isolation_active: bool = False
+    last_triggered_adaptive_rule: str | None = None
     policy_effect_summary: dict[str, Any]
+    adaptive_policy_effect_summary: dict[str, Any] = Field(default_factory=dict)
 
 
 class ZoneSummaryResponse(BaseModel):
@@ -261,6 +271,42 @@ class SimulationSocialResponse(BaseModel):
     mean_peer_rumor_exposure: float
     mean_peer_warning_exposure: float
     zone_pressures: dict[str, dict[str, float]]
+
+
+class ActiveInterventionResponse(BaseModel):
+    rule_id: str
+    action: str
+    target: str
+    target_zone_id: str | None
+    intensity: float
+    start_tick: int
+    end_tick: int
+
+
+class AdaptiveRuleResponse(BaseModel):
+    id: str
+    metric: str
+    operator: str
+    threshold: float
+    action: str
+    target: str
+    target_zone_id: str | None
+    duration_ticks: int
+    intensity: float
+    cooldown_ticks: int
+
+
+class SimulationAdaptiveResponse(BaseModel):
+    """Configured adaptive rules and current adaptive intervention state."""
+
+    simulation_id: str
+    tick: int
+    policy_id: str | None
+    rules: list[AdaptiveRuleResponse]
+    active_interventions: list[ActiveInterventionResponse]
+    trigger_count: int
+    last_triggered_rule: str | None
+    effect_summary: dict[str, Any]
 
 
 class ExportRunResponse(BaseModel):

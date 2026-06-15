@@ -5,6 +5,7 @@ import type {
   ExportRunResponse,
   SimulationMetricsResponse,
   SimulationStateResponse,
+  SweepResultResponse,
 } from "../types/simulation";
 
 export function createSimulation(
@@ -39,5 +40,13 @@ export function runBatchExperiment(
 ): Promise<ExperimentResultResponse> {
   return apiPost<ExperimentResultResponse>("/experiments/run", {
     experiment_config: experimentConfig,
+  });
+}
+
+export function runSweep(
+  sweepConfig = "behavior_sensitivity_v1",
+): Promise<SweepResultResponse> {
+  return apiPost<SweepResultResponse>("/experiments/sweep", {
+    sweep_config: sweepConfig,
   });
 }

@@ -4,7 +4,9 @@ import random
 from dataclasses import dataclass, field
 from typing import Any
 
+from app.domain.adaptive import AdaptivePolicy
 from app.domain.agent import EpidemiologicalState
+from app.domain.behavior_params import BehaviorParameters
 from app.domain.disease import DiseaseProfile
 from app.domain.information import InformationEvent
 from app.domain.policy import Policy
@@ -12,6 +14,7 @@ from app.domain.simulation import SimulationSnapshot, SimulationState
 from app.domain.time import SimulationTime
 from app.domain.world import World
 from app.schemas.configs import AgentPopulationConfig, InitialOutbreakConfig
+from app.simulation.adaptive import AdaptivePolicyEngine
 from app.simulation.behavior import BehaviorEngine
 from app.simulation.cognition import CognitionEngine
 from app.simulation.contacts import ContactEngine
@@ -38,6 +41,7 @@ class SimulationEngine:
     social_engine: SocialInfluenceEngine = field(default_factory=SocialInfluenceEngine)
     cognition_engine: CognitionEngine = field(default_factory=CognitionEngine)
     behavior_engine: BehaviorEngine = field(default_factory=BehaviorEngine)
+    adaptive_engine: AdaptivePolicyEngine = field(default_factory=AdaptivePolicyEngine)
     policy_engine: PolicyHookEngine = field(default_factory=PolicyHookEngine)
     metrics_engine: MetricsEngine = field(default_factory=MetricsEngine)
     snapshot_builder: SnapshotBuilder = field(default_factory=SnapshotBuilder)
@@ -54,6 +58,8 @@ class SimulationEngine:
         policy: Policy | None = None,
         policies: list[Policy] | None = None,
         information_events: list[InformationEvent] | None = None,
+        behavior_params: BehaviorParameters | None = None,
+        adaptive_policy: AdaptivePolicy | None = None,
         config_summary: dict[str, Any] | None = None,
     ) -> "SimulationEngine":
         agents = PopulationGenerator().generate(
@@ -80,6 +86,8 @@ class SimulationEngine:
             policy=policy,
             policies=configured_policies,
             information_events=configured_events,
+            behavior_params=behavior_params or BehaviorParameters(),
+            adaptive_policy=adaptive_policy,
         )
         engine = cls(state=state, rng=random.Random(seed))
         state.active_policy_ids = [
@@ -119,6 +127,13 @@ class SimulationEngine:
             self.state.disease.tick_minutes,
         )
         modifiers = self.policy_engine.before_mobility(self.state)
+        zone_risk = self._real_risk_by_zone()
+        active_adaptive = self.adaptive_engine.evaluate(
+            self.state.adaptive_policy,
+            self._adaptive_context(),
+            zone_risk,
+            self.state.tick,
+        )
         active_events = tuple(
             event for event in self.state.information_events if event.is_active(self.state.tick)
         )
@@ -148,6 +163,7 @@ class SimulationEngine:
         self.state.zone_social_pressures = social.zone_pressures
         self.state.rumor_pressure = social.mean_rumor_pressure
         self.state.peer_warning_pressure = social.mean_peer_warning_pressure
+        self.adaptive_engine.apply(self.state.agents, self.state.tick)
         self.transmission_engine.progress(
             self.state.agents,
             self.state.disease,
@@ -155,13 +171,19 @@ class SimulationEngine:
             self.rng,
         )
         isolated_this_tick = self.policy_engine.apply_isolation(self.state, modifiers)
+        isolated_this_tick += self.adaptive_engine.apply_adaptive_isolation(
+            self.state.agents, self.state.tick
+        )
+        self._record_adaptive_state()
         self.cognition_engine.step(
             self.state.agents,
-            self._real_risk_by_zone(),
+            zone_risk,
             modifiers,
             self.state.tick,
         )
-        self.behavior_engine.step(self.state.agents, modifiers, self.state.tick)
+        self.behavior_engine.step(
+            self.state.agents, modifiers, self.state.tick, self.state.behavior_params
+        )
         movement = self.mobility_engine.step(
             self.state.agents,
             self.state.world,
@@ -179,6 +201,7 @@ class SimulationEngine:
             self.state.tick,
             self.state.disease.tick_minutes,
             modifiers,
+            self.state.behavior_params,
         )
         # Policy-only reduction keeps its Phase 3 meaning; behavior is tracked
         # separately via raw vs effective contact counts.
@@ -207,6 +230,7 @@ class SimulationEngine:
             self.state.tick,
             self.rng,
             modifiers,
+            self.state.behavior_params,
         )
         infections_by_zone = transmission.infections_by_zone
         self.state.effective_beta_mean = transmission.effective_beta_mean
@@ -242,7 +266,15 @@ class SimulationEngine:
                 misinformation_transmission_amplification=transmission.misinformation_transmission_amplification,
                 rumor_pressure=social.mean_rumor_pressure,
                 peer_warning_pressure=social.mean_peer_warning_pressure,
+                adaptive_policy_trigger_count=self.state.adaptive_policy_trigger_count,
+                adaptive_policy_active_count=self.state.adaptive_policy_active_count,
+                counter_messaging_active=self.state.counter_messaging_active,
+                peer_warning_campaign_active=self.state.peer_warning_campaign_active,
+                trust_repair_active=self.state.trust_repair_active,
+                adaptive_isolation_active=self.state.adaptive_isolation_active,
+                last_triggered_adaptive_rule=self.state.last_triggered_adaptive_rule,
                 policy_effect_summary=self.state.policy_effect_summary.copy(),
+                adaptive_policy_effect_summary=self.state.adaptive_policy_effect_summary.copy(),
             )
         )
         self.policy_engine.after_metrics(self.state)
@@ -256,6 +288,48 @@ class SimulationEngine:
         for _ in range(ticks):
             self.step()
         return self.snapshot()
+
+    def _adaptive_context(self) -> dict[str, float]:
+        """Build the metric context adaptive rules evaluate, from prior metrics."""
+
+        history = self.state.metrics_history
+        if not history:
+            return {}
+        latest = history[-1]
+        context = {
+            "misinformation_transmission_amplification": (
+                latest.misinformation_transmission_amplification
+            ),
+            "behavioral_transmission_reduction": latest.behavioral_transmission_reduction,
+            "effective_beta_mean": latest.effective_beta_mean,
+            "mean_trust_authority": latest.mean_trust_authority,
+            "mean_protection_behavior": latest.mean_protection_behavior,
+            "mean_perceived_risk": latest.mean_perceived_risk,
+            "mean_rumor_exposure": latest.mean_rumor_exposure,
+            "active_infections": float(latest.active_infections),
+            "new_infections": float(latest.new_infections),
+            "cumulative_infections": float(latest.cumulative_infections),
+        }
+        if len(history) >= 2:
+            context["active_infections_trend"] = float(
+                latest.active_infections - history[-2].active_infections
+            )
+        else:
+            context["active_infections_trend"] = 0.0
+        return context
+
+    def _record_adaptive_state(self) -> None:
+        """Mirror the adaptive engine's live state onto the simulation state."""
+
+        summary = self.adaptive_engine.effect_summary()
+        self.state.adaptive_policy_trigger_count = self.adaptive_engine.trigger_count
+        self.state.adaptive_policy_active_count = len(self.adaptive_engine.active)
+        self.state.counter_messaging_active = summary["counter_messaging_active"]
+        self.state.peer_warning_campaign_active = summary["peer_warning_campaign_active"]
+        self.state.trust_repair_active = summary["trust_repair_active"]
+        self.state.adaptive_isolation_active = summary["adaptive_isolation_active"]
+        self.state.last_triggered_adaptive_rule = self.adaptive_engine.last_triggered_rule
+        self.state.adaptive_policy_effect_summary = summary
 
     def _real_risk_by_zone(self) -> dict[str, float]:
         """Local active-infection ratio per zone, used as objective real risk."""

@@ -8,6 +8,7 @@ from app.infrastructure.config_loader import ConfigLoader
 from app.infrastructure.exporters import RunExporter
 from app.schemas.simulation import (
     ExportRunResponse,
+    SimulationAdaptiveResponse,
     SimulationBehaviorResponse,
     SimulationCognitionResponse,
     SimulationCreateRequest,
@@ -98,6 +99,13 @@ def simulation_social(simulation_id: str) -> SimulationSocialResponse:
     """Read district-wide and per-zone social-influence pressures."""
 
     return service.social(simulation_id)
+
+
+@router.get("/{simulation_id}/adaptive-policies", response_model=SimulationAdaptiveResponse)
+def simulation_adaptive_policies(simulation_id: str) -> SimulationAdaptiveResponse:
+    """Read configured adaptive rules and live adaptive intervention state."""
+
+    return service.adaptive_policies(simulation_id)
 
 
 @router.post("/{simulation_id}/export", response_model=ExportRunResponse)

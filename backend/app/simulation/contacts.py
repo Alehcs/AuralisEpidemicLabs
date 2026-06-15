@@ -4,6 +4,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 
 from app.domain.agent import Agent
+from app.domain.behavior_params import BehaviorParameters
 from app.domain.contacts import ContactRecord
 from app.domain.world import World
 from app.simulation.policies import PolicyModifiers
@@ -18,9 +19,8 @@ class ZoneContactContext:
     infectious_pressure: float
 
 
-# Strength of behavior on effective contacts (Phase 5). Distancing thins
-# mixing; risk compensation (false safety / fatigue) re-thickens it.
-_DISTANCING_STRENGTH = 0.5
+# Risk compensation re-thickens contacts; its contact-level strength stays fixed
+# while distancing strength is configurable via BehaviorParameters.
 _RISK_COMPENSATION_STRENGTH = 0.5
 
 
@@ -51,8 +51,10 @@ class ContactEngine:
         tick: int,
         tick_minutes: int,
         policy_modifiers: PolicyModifiers | None = None,
+        params: BehaviorParameters | None = None,
     ) -> ContactBatch:
         modifiers = policy_modifiers or PolicyModifiers()
+        params = params or BehaviorParameters()
         grouped: dict[str, list[Agent]] = defaultdict(list)
         for agent in agents:
             grouped[agent.zone_id].append(agent)
@@ -75,7 +77,7 @@ class ContactEngine:
             density = population / zone.capacity
             baseline_contacts = round(population * zone.contact_rate * tick_fraction / 2)
             contact_multiplier = modifiers.contact_multiplier(zone_id)
-            behavior_multiplier = self._behavior_multiplier(local_agents)
+            behavior_multiplier = self._behavior_multiplier(local_agents, params)
             effective_multiplier = contact_multiplier * behavior_multiplier
             policy_contacts = round(baseline_contacts * contact_multiplier)
             contact_count = round(baseline_contacts * effective_multiplier)
@@ -115,7 +117,10 @@ class ContactEngine:
         )
 
     @staticmethod
-    def _behavior_multiplier(local_agents: list[Agent]) -> float:
+    def _behavior_multiplier(
+        local_agents: list[Agent],
+        params: BehaviorParameters,
+    ) -> float:
         """Mean distancing thins contacts; mean risk compensation re-thickens."""
 
         population = len(local_agents)
@@ -123,7 +128,7 @@ class ContactEngine:
             return 1.0
         mean_distancing = sum(agent.distancing_behavior for agent in local_agents) / population
         mean_risk_comp = sum(agent.risk_compensation for agent in local_agents) / population
-        multiplier = (1 - mean_distancing * _DISTANCING_STRENGTH) * (
+        multiplier = (1 - mean_distancing * params.distancing_contact_strength) * (
             1 + mean_risk_comp * _RISK_COMPENSATION_STRENGTH
         )
         return max(0.05, multiplier)

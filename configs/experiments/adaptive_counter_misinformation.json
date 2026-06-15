@@ -1,0 +1,30 @@
+{
+  "id": "adaptive_counter_misinformation",
+  "name": "Adaptive Counter-Misinformation vs Static",
+  "scenario_config": "district_v1_market_outbreak",
+  "disease_config": "respiratory_like_v1",
+  "population_config": "default_population_v1",
+  "repetitions": 2,
+  "seeds": [42, 84],
+  "ticks": 168,
+  "variants": [
+    {
+      "id": "baseline",
+      "policy_configs": []
+    },
+    {
+      "id": "false_safety_no_response",
+      "information_configs": ["false_safety_market"]
+    },
+    {
+      "id": "false_safety_static_alert",
+      "policy_config": "local_alert_policy",
+      "information_configs": ["false_safety_market"]
+    },
+    {
+      "id": "false_safety_adaptive_counter_message",
+      "information_configs": ["false_safety_market"],
+      "adaptive_policy_config": "adaptive_counter_misinformation_v1"
+    }
+  ]
+}

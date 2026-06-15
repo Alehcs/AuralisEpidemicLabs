@@ -6,6 +6,7 @@ import {
   getSimulationMetrics,
   runBatchExperiment,
   runSimulation,
+  runSweep,
   stepSimulation,
 } from "../api/simulation.api";
 import { AppHeader } from "../components/layout/AppHeader";
@@ -14,12 +15,14 @@ import { BackendStatusCard } from "../features/dashboard/BackendStatusCard";
 import { DistrictMap } from "../features/district-map/DistrictMap";
 import { MetricsPanel } from "../features/metrics-panel/MetricsPanel";
 import { ExperimentResults } from "../features/scenario-comparison/ExperimentResults";
+import { SweepResults } from "../features/scenario-comparison/SweepResults";
 import { SimulationControls } from "../features/simulation-controls/SimulationControls";
 import type {
   ExperimentResultResponse,
   MetricsSnapshot,
   SimulationSnapshot,
   SimulationStateResponse,
+  SweepResultResponse,
 } from "../types/simulation";
 
 const createRequest = {
@@ -29,6 +32,8 @@ const createRequest = {
   policy_config: null,
   policy_configs: ["local_alert_policy", "isolation_encouragement_policy"],
   information_configs: ["false_safety_market"],
+  behavior_config: "calibrated_baseline_v1",
+  adaptive_policy_config: "adaptive_counter_misinformation_v1",
   seed: 42,
 };
 
@@ -40,6 +45,7 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [experimentResult, setExperimentResult] = useState<ExperimentResultResponse | null>(null);
+  const [sweepResult, setSweepResult] = useState<SweepResultResponse | null>(null);
 
   const applyResponse = useCallback(async (response: SimulationStateResponse) => {
     setSimulationId(response.simulation_id);
@@ -78,7 +84,7 @@ export function App() {
       setBusy(false);
     }
   };
-  const runExperiment = useCallback(async (experimentConfig: string) => {
+  const handleRunExperiment = useCallback(async (experimentConfig: string) => {
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -92,9 +98,20 @@ export function App() {
       setBusy(false);
     }
   }, []);
-  const handleRunExperiment = () => runExperiment("global_vs_local_alert");
-  const handleRunRumorExperiment = () => runExperiment("official_alert_vs_rumors");
-  const handleRunMisinformationExperiment = () => runExperiment("misinformation_epidemic_impact");
+  const handleRunSweep = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await runSweep();
+      setSweepResult(result);
+      setNotice(`Sensitivity sweep ${result.sweep_id} completed (${result.points.length} points).`);
+    } catch (operationError) {
+      setError(operationError instanceof Error ? operationError.message : "Sweep failed");
+    } finally {
+      setBusy(false);
+    }
+  }, []);
 
   return (
     <div className="app-shell">
@@ -117,8 +134,7 @@ export function App() {
             onReset={handleReset}
             onExport={handleExport}
             onRunExperiment={handleRunExperiment}
-            onRunRumorExperiment={handleRunRumorExperiment}
-            onRunMisinformationExperiment={handleRunMisinformationExperiment}
+            onRunSweep={handleRunSweep}
           />
           <MetricsPanel snapshot={snapshot} />
         </div>
@@ -128,8 +144,11 @@ export function App() {
         <div className="results-panel">
           <ExperimentResults result={experimentResult} />
         </div>
+        <div className="results-panel">
+          <SweepResults result={sweepResult} />
+        </div>
       </main>
-      <footer>Phase 5 · Behavior-driven transmission feedback and light social rumor propagation</footer>
+      <footer>Phase 6 · Adaptive interventions and behavior-strength sensitivity sweeps</footer>
     </div>
   );
 }

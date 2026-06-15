@@ -8,6 +8,7 @@ from app.infrastructure.config_loader import ConfigLoader
 from app.infrastructure.exporters import RunExporter
 from app.schemas.simulation import (
     MetricsSnapshotResponse,
+    SimulationAdaptiveResponse,
     SimulationBehaviorResponse,
     SimulationCognitionResponse,
     SimulationCreateRequest,
@@ -45,6 +46,20 @@ class SimulationService:
             self.loader.to_information_event(self.loader.load_information(name))
             for name in request.information_configs
         ]
+        behavior_params = (
+            self.loader.to_behavior_parameters(
+                self.loader.load_behavior(request.behavior_config)
+            )
+            if request.behavior_config
+            else None
+        )
+        adaptive_policy = (
+            self.loader.to_adaptive_policy(
+                self.loader.load_adaptive(request.adaptive_policy_config)
+            )
+            if request.adaptive_policy_config
+            else None
+        )
 
         simulation_id = str(uuid4())
         try:
@@ -58,6 +73,8 @@ class SimulationService:
                 policy=policies[0] if len(policies) == 1 else None,
                 policies=policies,
                 information_events=information_events,
+                behavior_params=behavior_params,
+                adaptive_policy=adaptive_policy,
                 config_summary={
                     "scenario_config": request.scenario_config,
                     "disease_config": request.disease_config,
@@ -65,6 +82,8 @@ class SimulationService:
                     "policy_config": request.policy_config,
                     "policy_configs": policy_names,
                     "information_configs": request.information_configs,
+                    "behavior_config": request.behavior_config,
+                    "adaptive_policy_config": request.adaptive_policy_config,
                     "seed": request.seed,
                 },
             )
@@ -239,6 +258,50 @@ class SimulationService:
                 "mean_peer_rumor_exposure": metrics.mean_peer_rumor_exposure,
                 "mean_peer_warning_exposure": metrics.mean_peer_warning_exposure,
                 "zone_pressures": state.zone_social_pressures,
+            }
+        )
+
+    def adaptive_policies(self, simulation_id: str) -> SimulationAdaptiveResponse:
+        """Return configured adaptive rules and live intervention state."""
+
+        engine = self._get_engine(simulation_id)
+        state = engine.state
+        policy = state.adaptive_policy
+        return SimulationAdaptiveResponse.model_validate(
+            {
+                "simulation_id": simulation_id,
+                "tick": state.tick,
+                "policy_id": policy.id if policy else None,
+                "rules": [
+                    {
+                        "id": rule.id,
+                        "metric": rule.metric,
+                        "operator": rule.operator,
+                        "threshold": rule.threshold,
+                        "action": rule.action.value,
+                        "target": rule.target,
+                        "target_zone_id": rule.target_zone_id,
+                        "duration_ticks": rule.duration_ticks,
+                        "intensity": rule.intensity,
+                        "cooldown_ticks": rule.cooldown_ticks,
+                    }
+                    for rule in (policy.rules if policy else ())
+                ],
+                "active_interventions": [
+                    {
+                        "rule_id": item.rule_id,
+                        "action": item.action.value,
+                        "target": item.target,
+                        "target_zone_id": item.target_zone_id,
+                        "intensity": item.intensity,
+                        "start_tick": item.start_tick,
+                        "end_tick": item.end_tick,
+                    }
+                    for item in engine.adaptive_engine.active
+                ],
+                "trigger_count": engine.adaptive_engine.trigger_count,
+                "last_triggered_rule": engine.adaptive_engine.last_triggered_rule,
+                "effect_summary": state.adaptive_policy_effect_summary,
             }
         )
 

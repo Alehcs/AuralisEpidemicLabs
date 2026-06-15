@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from app.domain.adaptive import AdaptiveAction
 from app.domain.information import InformationType
 from app.domain.policy import PolicyType
 
@@ -231,6 +232,65 @@ class InformationEventConfig(BaseModel):
         return self
 
 
+class BehaviorConfig(BaseModel):
+    """Tunable behavior/transmission strengths (Phase 6).
+
+    Defaults match the Phase 5 module constants, so omitting a behavior config
+    reproduces earlier behavior exactly. Upper bounds are generous to allow
+    sensitivity sweeps above the calibrated baseline.
+    """
+
+    id: str = Field(min_length=1)
+    name: str = Field(default="Behavior parameters", min_length=1)
+    susceptible_protection_strength: float = Field(default=0.6, ge=0, le=5)
+    infectious_protection_strength: float = Field(default=0.5, ge=0, le=5)
+    risk_compensation_strength: float = Field(default=0.6, ge=0, le=5)
+    distancing_contact_strength: float = Field(default=0.5, ge=0, le=5)
+    false_safety_amplification_strength: float = Field(default=0.45, ge=0, le=5)
+    anti_authority_compliance_penalty: float = Field(default=0.15, ge=0, le=5)
+    fatigue_protection_penalty: float = Field(default=0.35, ge=0, le=1)
+    peer_warning_protection_boost: float = Field(default=0.0, ge=0, le=5)
+
+
+BEHAVIOR_PARAMETER_FIELDS = frozenset(
+    BehaviorConfig.model_fields.keys() - {"id", "name"}
+)
+
+
+class AdaptiveRuleConfig(BaseModel):
+    """A single metric-triggered adaptive intervention rule."""
+
+    id: str = Field(min_length=1)
+    metric: str = Field(min_length=1)
+    operator: Literal[">", "<", ">=", "<=", "=="]
+    threshold: float
+    action: AdaptiveAction
+    target: Literal["global", "local"] = "global"
+    target_zone_id: str | None = None
+    duration_ticks: int = Field(default=24, gt=0)
+    intensity: float = Field(default=0.5, ge=0, le=1)
+    cooldown_ticks: int = Field(default=24, ge=0)
+
+    @field_validator("action", mode="before")
+    @classmethod
+    def normalize_action(cls, value: Any) -> Any:
+        return value.lower() if isinstance(value, str) else value
+
+    @model_validator(mode="after")
+    def validate_target(self) -> "AdaptiveRuleConfig":
+        if self.target == "local" and not self.target_zone_id:
+            raise ValueError("local adaptive rules require target_zone_id")
+        return self
+
+
+class AdaptivePolicyConfig(BaseModel):
+    """A named bundle of adaptive rules."""
+
+    id: str = Field(min_length=1)
+    name: str = Field(default="Adaptive policy", min_length=1)
+    rules: list[AdaptiveRuleConfig] = Field(min_length=1)
+
+
 class ExperimentVariantConfig(BaseModel):
     """One named treatment arm in a batch experiment."""
 
@@ -238,6 +298,8 @@ class ExperimentVariantConfig(BaseModel):
     policy_config: str | None = None
     policy_configs: list[str] = Field(default_factory=list)
     information_configs: list[str] = Field(default_factory=list)
+    behavior_config: str | None = None
+    adaptive_policy_config: str | None = None
     overrides: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -258,4 +320,27 @@ class ExperimentConfig(BaseModel):
     repetitions: int = Field(default=1, gt=0)
     seeds: list[int] = Field(default_factory=lambda: [42], min_length=1)
     ticks: int = Field(default=168, gt=0, le=100_000)
+    behavior_config: str | None = None
     variants: list[ExperimentVariantConfig] = Field(min_length=1)
+
+
+class SweepConfig(BaseModel):
+    """A deterministic parameter-sweep over behavior strengths for an experiment."""
+
+    id: str = Field(min_length=1)
+    name: str = Field(default="Parameter sweep", min_length=1)
+    experiment_config: str = Field(min_length=1)
+    parameter_grid: dict[str, list[float]] = Field(min_length=1)
+    seeds: list[int] | None = None
+    ticks: int | None = Field(default=None, gt=0, le=100_000)
+    population_size: int | None = Field(default=None, gt=0)
+    focus_variant: str | None = None
+
+    @model_validator(mode="after")
+    def validate_grid(self) -> "SweepConfig":
+        for name, values in self.parameter_grid.items():
+            if name not in BEHAVIOR_PARAMETER_FIELDS:
+                raise ValueError(f"unknown sweep parameter: {name}")
+            if not values:
+                raise ValueError(f"sweep parameter '{name}' must list at least one value")
+        return self
